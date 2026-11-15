@@ -1,0 +1,2493 @@
+[
+  {
+    "previous": {
+      "generatedAt": "2026-10-25T09:00:00.000Z",
+      "firstTurnTokens": 38900,
+      "nodes": {
+        "settings:user": {
+          "tokens": 0,
+          "label": "settings.json",
+          "kind": "settings"
+        },
+        "claudemd:user": {
+          "tokens": 620,
+          "label": "CLAUDE.md",
+          "kind": "claude_md"
+        },
+        "memory:index": {
+          "tokens": 410,
+          "label": "MEMORY.md",
+          "kind": "memory_index"
+        },
+        "memory:files": {
+          "tokens": 4100,
+          "label": "unlinked memory files (9)",
+          "kind": "memory_files"
+        },
+        "memory:file:hub_release.md": {
+          "tokens": 300,
+          "label": "hub_release.md",
+          "kind": "memory_file"
+        },
+        "memory:file:deploy_checklist.md": {
+          "tokens": 1100,
+          "label": "deploy_checklist.md",
+          "kind": "memory_file"
+        },
+        "memory:file:release_process.md": {
+          "tokens": 720,
+          "label": "release_process.md",
+          "kind": "memory_file"
+        },
+        "memory:file:flaky_tests.md": {
+          "tokens": 640,
+          "label": "flaky_tests.md",
+          "kind": "memory_file"
+        },
+        "memory:file:hub_api.md": {
+          "tokens": 260,
+          "label": "hub_api.md",
+          "kind": "memory_file"
+        },
+        "memory:file:api_error_codes.md": {
+          "tokens": 860,
+          "label": "api_error_codes.md",
+          "kind": "memory_file"
+        },
+        "memory:file:customer_tiers.md": {
+          "tokens": 480,
+          "label": "customer_tiers.md",
+          "kind": "memory_file"
+        },
+        "memory:file:style_decisions.md": {
+          "tokens": 420,
+          "label": "style_decisions.md",
+          "kind": "memory_file"
+        },
+        "memory:file:oncall_notes.md": {
+          "tokens": 380,
+          "label": "oncall_notes.md",
+          "kind": "memory_file"
+        },
+        "hook:user:pre": {
+          "tokens": 0,
+          "label": "PreToolUse [Bash]: guard.sh",
+          "kind": "hook"
+        },
+        "plugin:frontend-design": {
+          "tokens": 0,
+          "label": "frontend-design",
+          "kind": "plugin"
+        },
+        "skill:frontend-design:frontend-design": {
+          "tokens": 3150,
+          "label": "frontend-design:frontend-design",
+          "kind": "skill"
+        },
+        "plugin:playwright": {
+          "tokens": 0,
+          "label": "playwright",
+          "kind": "plugin"
+        },
+        "plugin:docs-helper": {
+          "tokens": 0,
+          "label": "docs-helper",
+          "kind": "plugin"
+        },
+        "skill:docs-helper:write-docs": {
+          "tokens": 2700,
+          "label": "docs-helper:write-docs",
+          "kind": "skill"
+        },
+        "skill:docs-helper:release-notes": {
+          "tokens": 2970,
+          "label": "docs-helper:release-notes",
+          "kind": "skill"
+        },
+        "skill:user:tdd": {
+          "tokens": 2400,
+          "label": "test-driven-development",
+          "kind": "skill"
+        },
+        "settings:project": {
+          "tokens": 0,
+          "label": "settings.json",
+          "kind": "settings"
+        },
+        "claudemd:project": {
+          "tokens": 2100,
+          "label": "CLAUDE.md",
+          "kind": "claude_md"
+        },
+        "rule:api.md": {
+          "tokens": 700,
+          "label": "api.md",
+          "kind": "rule"
+        },
+        "rule:style.md": {
+          "tokens": 260,
+          "label": "style.md",
+          "kind": "rule"
+        },
+        "command:ship": {
+          "tokens": 450,
+          "label": "ship",
+          "kind": "command"
+        },
+        "command:review": {
+          "tokens": 450,
+          "label": "review",
+          "kind": "command"
+        },
+        "agent:reviewer": {
+          "tokens": 380,
+          "label": "reviewer",
+          "kind": "agent"
+        },
+        "import:conventions": {
+          "tokens": 640,
+          "label": "conventions.md",
+          "kind": "claude_md"
+        },
+        "hook:project:post": {
+          "tokens": 0,
+          "label": "PostToolUse [Edit|Write]: lint.sh",
+          "kind": "hook"
+        },
+        "mcp:postgres": {
+          "tokens": 0,
+          "label": "postgres",
+          "kind": "mcp_server"
+        },
+        "settings:local": {
+          "tokens": 0,
+          "label": "settings.local.json",
+          "kind": "settings"
+        },
+        "session:skill_listing": {
+          "tokens": 2600,
+          "label": "skill listing (18)",
+          "kind": "skill_listing"
+        },
+        "session:output_style": {
+          "tokens": 330,
+          "label": "output style: Concise",
+          "kind": "output_style"
+        },
+        "tools:postgres": {
+          "tokens": 248,
+          "label": "postgres tools (9)",
+          "kind": "tool_group"
+        },
+        "tools:github": {
+          "tokens": 1333,
+          "label": "github tools (41)",
+          "kind": "tool_group"
+        },
+        "mcp:github": {
+          "tokens": 0,
+          "label": "github",
+          "kind": "mcp_server"
+        },
+        "tools:slack": {
+          "tokens": 540,
+          "label": "slack tools (18)",
+          "kind": "tool_group"
+        },
+        "mcp:slack": {
+          "tokens": 0,
+          "label": "slack",
+          "kind": "mcp_server"
+        },
+        "tools:playwright": {
+          "tokens": 600,
+          "label": "playwright tools (24)",
+          "kind": "tool_group"
+        },
+        "mcp:playwright": {
+          "tokens": 0,
+          "label": "playwright",
+          "kind": "mcp_server"
+        },
+        "tools:built-in": {
+          "tokens": 560,
+          "label": "built-in tools (14)",
+          "kind": "tool_group"
+        },
+        "mcpinstr:github": {
+          "tokens": 610,
+          "label": "github instructions",
+          "kind": "mcp_instructions"
+        },
+        "mcpinstr:playwright": {
+          "tokens": 380,
+          "label": "playwright instructions",
+          "kind": "mcp_instructions"
+        },
+        "harness": {
+          "tokens": 28479,
+          "label": "harness (system prompt, tool schemas)",
+          "kind": "harness"
+        },
+        "rule:legacy.md": {
+          "tokens": 900,
+          "label": "legacy.md",
+          "kind": "rule"
+        }
+      }
+    },
+    "version": 1,
+    "harness": {
+      "id": "claude-code",
+      "name": "Claude Code"
+    },
+    "generatedAt": "2026-11-01T09:00:00.000Z",
+    "project": "~/dev/acme-shop (demo data)",
+    "platform": "linux",
+    "session": {
+      "transcript": "demo",
+      "firstTurnTokens": 41200,
+      "model": "demo",
+      "turns": [
+        [
+          3,
+          41197,
+          0
+        ],
+        [
+          3,
+          800,
+          41197
+        ],
+        [
+          3,
+          5588,
+          41997
+        ],
+        [
+          3,
+          2304,
+          47585
+        ],
+        [
+          3,
+          1895,
+          49889
+        ],
+        [
+          3,
+          4593,
+          51784
+        ],
+        [
+          3,
+          3570,
+          56377
+        ],
+        [
+          3,
+          2512,
+          59947
+        ],
+        [
+          3,
+          4711,
+          62459
+        ],
+        [
+          3,
+          4726,
+          67170
+        ],
+        [
+          3,
+          3623,
+          71896
+        ],
+        [
+          3,
+          4359,
+          75519
+        ],
+        [
+          3,
+          4107,
+          79878
+        ],
+        [
+          3,
+          5047,
+          83985
+        ],
+        [
+          3,
+          2058,
+          89032
+        ],
+        [
+          3,
+          2746,
+          91090
+        ],
+        [
+          3,
+          4481,
+          93836
+        ],
+        [
+          3,
+          4430,
+          98317
+        ],
+        [
+          3,
+          1080,
+          102747
+        ],
+        [
+          3,
+          4356,
+          103827
+        ],
+        [
+          3,
+          3233,
+          108183
+        ],
+        [
+          3,
+          5596,
+          111416
+        ],
+        [
+          3,
+          4999,
+          117012
+        ],
+        [
+          3,
+          1439,
+          122011
+        ],
+        [
+          3,
+          3468,
+          123450
+        ],
+        [
+          3,
+          5600,
+          126918
+        ],
+        [
+          3,
+          4380,
+          132518
+        ],
+        [
+          3,
+          4148,
+          50197
+        ],
+        [
+          3,
+          3803,
+          54345
+        ],
+        [
+          3,
+          5542,
+          58148
+        ],
+        [
+          3,
+          5523,
+          63690
+        ],
+        [
+          3,
+          2736,
+          69213
+        ],
+        [
+          3,
+          2544,
+          71949
+        ],
+        [
+          3,
+          5153,
+          74493
+        ],
+        [
+          3,
+          2528,
+          79646
+        ],
+        [
+          3,
+          1593,
+          82174
+        ],
+        [
+          3,
+          2348,
+          83767
+        ],
+        [
+          3,
+          3028,
+          86115
+        ],
+        [
+          3,
+          2333,
+          89143
+        ],
+        [
+          3,
+          5674,
+          91476
+        ]
+      ],
+      "notes": [
+        "Synthetic demo data"
+      ]
+    },
+    "totals": {
+      "byLoad": {
+        "always": 37149,
+        "on_demand": 22980,
+        "deferred": 4051
+      },
+      "nodes": 49
+    },
+    "nodes": [
+      {
+        "tokens": 0,
+        "detail": {
+          "allowRules": 12,
+          "denyRules": 2
+        },
+        "id": "settings:user",
+        "label": "settings.json",
+        "kind": "settings",
+        "scope": "user",
+        "load": "config",
+        "source": "~/.claude/settings.json"
+      },
+      {
+        "tokens": 620,
+        "detail": {
+          "confirmedInSession": true
+        },
+        "id": "claudemd:user",
+        "label": "CLAUDE.md",
+        "kind": "claude_md",
+        "scope": "user",
+        "load": "always",
+        "source": "~/.claude/CLAUDE.md",
+        "outline": [
+          {
+            "level": 1,
+            "title": "Preferences",
+            "tokens": 20
+          },
+          {
+            "level": 2,
+            "title": "Response style",
+            "tokens": 310
+          },
+          {
+            "level": 2,
+            "title": "Commits",
+            "tokens": 290
+          }
+        ]
+      },
+      {
+        "tokens": 410,
+        "detail": {},
+        "id": "memory:index",
+        "label": "MEMORY.md",
+        "kind": "memory_index",
+        "scope": "user",
+        "load": "always",
+        "source": "~/.claude/projects/-home-dev-acme-shop/memory/MEMORY.md"
+      },
+      {
+        "tokens": 4100,
+        "detail": {
+          "count": 9
+        },
+        "id": "memory:files",
+        "label": "unlinked memory files (9)",
+        "kind": "memory_files",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.claude/projects/-home-dev-acme-shop/memory",
+        "files": [
+          {
+            "name": "db_migrations.md",
+            "tokens": 590
+          },
+          {
+            "name": "old_vendor_notes.md",
+            "tokens": 540
+          },
+          {
+            "name": "q3_retro.md",
+            "tokens": 510
+          },
+          {
+            "name": "perf_baseline.md",
+            "tokens": 470
+          }
+        ]
+      },
+      {
+        "tokens": 300,
+        "detail": {},
+        "id": "memory:file:hub_release.md",
+        "label": "hub_release.md",
+        "kind": "memory_file",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.claude/projects/-home-dev-acme-shop/memory/hub_release.md",
+        "parent": "memory:index"
+      },
+      {
+        "tokens": 1100,
+        "detail": {},
+        "id": "memory:file:deploy_checklist.md",
+        "label": "deploy_checklist.md",
+        "kind": "memory_file",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.claude/projects/-home-dev-acme-shop/memory/deploy_checklist.md",
+        "parent": "memory:file:hub_release.md"
+      },
+      {
+        "tokens": 720,
+        "detail": {},
+        "id": "memory:file:release_process.md",
+        "label": "release_process.md",
+        "kind": "memory_file",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.claude/projects/-home-dev-acme-shop/memory/release_process.md",
+        "parent": "memory:file:hub_release.md"
+      },
+      {
+        "tokens": 640,
+        "detail": {},
+        "id": "memory:file:flaky_tests.md",
+        "label": "flaky_tests.md",
+        "kind": "memory_file",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.claude/projects/-home-dev-acme-shop/memory/flaky_tests.md",
+        "parent": "memory:file:hub_release.md"
+      },
+      {
+        "tokens": 260,
+        "detail": {},
+        "id": "memory:file:hub_api.md",
+        "label": "hub_api.md",
+        "kind": "memory_file",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.claude/projects/-home-dev-acme-shop/memory/hub_api.md",
+        "parent": "memory:index"
+      },
+      {
+        "tokens": 860,
+        "detail": {},
+        "id": "memory:file:api_error_codes.md",
+        "label": "api_error_codes.md",
+        "kind": "memory_file",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.claude/projects/-home-dev-acme-shop/memory/api_error_codes.md",
+        "parent": "memory:file:hub_api.md"
+      },
+      {
+        "tokens": 480,
+        "detail": {},
+        "id": "memory:file:customer_tiers.md",
+        "label": "customer_tiers.md",
+        "kind": "memory_file",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.claude/projects/-home-dev-acme-shop/memory/customer_tiers.md",
+        "parent": "memory:file:hub_api.md"
+      },
+      {
+        "tokens": 420,
+        "detail": {},
+        "id": "memory:file:style_decisions.md",
+        "label": "style_decisions.md",
+        "kind": "memory_file",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.claude/projects/-home-dev-acme-shop/memory/style_decisions.md",
+        "parent": "memory:index"
+      },
+      {
+        "tokens": 380,
+        "detail": {},
+        "id": "memory:file:oncall_notes.md",
+        "label": "oncall_notes.md",
+        "kind": "memory_file",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.claude/projects/-home-dev-acme-shop/memory/oncall_notes.md",
+        "parent": "memory:index"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "event": "PreToolUse",
+          "matcher": "Bash"
+        },
+        "id": "hook:user:pre",
+        "label": "PreToolUse [Bash]: guard.sh",
+        "kind": "hook",
+        "scope": "user",
+        "load": "runtime",
+        "source": "~/.claude/settings.json"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "version": "1.0.0"
+        },
+        "id": "plugin:frontend-design",
+        "label": "frontend-design",
+        "kind": "plugin",
+        "scope": "user",
+        "load": "config",
+        "source": "~/.claude/settings.json"
+      },
+      {
+        "tokens": 3150,
+        "detail": {},
+        "id": "skill:frontend-design:frontend-design",
+        "label": "frontend-design:frontend-design",
+        "kind": "skill",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.claude/plugins/cache/frontend-design/skills/frontend-design/SKILL.md"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "version": "1.0.0"
+        },
+        "id": "plugin:playwright",
+        "label": "playwright",
+        "kind": "plugin",
+        "scope": "user",
+        "load": "config",
+        "source": "~/.claude/settings.json"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "version": "1.0.0"
+        },
+        "id": "plugin:docs-helper",
+        "label": "docs-helper",
+        "kind": "plugin",
+        "scope": "user",
+        "load": "config",
+        "source": "~/.claude/settings.json"
+      },
+      {
+        "tokens": 2700,
+        "detail": {},
+        "id": "skill:docs-helper:write-docs",
+        "label": "docs-helper:write-docs",
+        "kind": "skill",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.claude/plugins/cache/docs-helper/skills/write-docs/SKILL.md"
+      },
+      {
+        "tokens": 2970,
+        "detail": {},
+        "id": "skill:docs-helper:release-notes",
+        "label": "docs-helper:release-notes",
+        "kind": "skill",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.claude/plugins/cache/docs-helper/skills/release-notes/SKILL.md"
+      },
+      {
+        "tokens": 2400,
+        "detail": {},
+        "id": "skill:user:tdd",
+        "label": "test-driven-development",
+        "kind": "skill",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.claude/skills/test-driven-development/SKILL.md",
+        "outline": [
+          {
+            "level": 0,
+            "title": "(frontmatter)",
+            "tokens": 60
+          },
+          {
+            "level": 1,
+            "title": "Test-driven development",
+            "tokens": 120
+          },
+          {
+            "level": 2,
+            "title": "When to use",
+            "tokens": 400
+          },
+          {
+            "level": 2,
+            "title": "Red, green, refactor",
+            "tokens": 1100
+          },
+          {
+            "level": 2,
+            "title": "Common mistakes",
+            "tokens": 720
+          }
+        ]
+      },
+      {
+        "tokens": 0,
+        "detail": {},
+        "id": "settings:project",
+        "label": "settings.json",
+        "kind": "settings",
+        "scope": "project",
+        "load": "config",
+        "source": "~/dev/acme-shop/.claude/settings.json"
+      },
+      {
+        "tokens": 2900,
+        "detail": {
+          "confirmedInSession": true
+        },
+        "id": "claudemd:project",
+        "label": "CLAUDE.md",
+        "kind": "claude_md",
+        "scope": "project",
+        "load": "always",
+        "source": "~/dev/acme-shop/CLAUDE.md",
+        "outline": [
+          {
+            "level": 1,
+            "title": "acme-shop",
+            "tokens": 40
+          },
+          {
+            "level": 2,
+            "title": "Setup",
+            "tokens": 380
+          },
+          {
+            "level": 2,
+            "title": "Architecture",
+            "tokens": 720
+          },
+          {
+            "level": 3,
+            "title": "API layer",
+            "tokens": 410
+          },
+          {
+            "level": 3,
+            "title": "Storefront",
+            "tokens": 290
+          },
+          {
+            "level": 2,
+            "title": "Testing",
+            "tokens": 560
+          },
+          {
+            "level": 2,
+            "title": "Git conventions",
+            "tokens": 240
+          },
+          {
+            "level": 2,
+            "title": "Deploy",
+            "tokens": 260
+          }
+        ]
+      },
+      {
+        "tokens": 700,
+        "detail": {
+          "pathScoped": true
+        },
+        "id": "rule:api.md",
+        "label": "api.md",
+        "kind": "rule",
+        "scope": "project",
+        "load": "on_demand",
+        "source": "~/dev/acme-shop/.claude/rules/api.md"
+      },
+      {
+        "tokens": 520,
+        "detail": {
+          "pathScoped": true
+        },
+        "id": "rule:frontend.md",
+        "label": "frontend.md",
+        "kind": "rule",
+        "scope": "project",
+        "load": "on_demand",
+        "source": "~/dev/acme-shop/.claude/rules/frontend.md"
+      },
+      {
+        "tokens": 260,
+        "detail": {
+          "pathScoped": false
+        },
+        "id": "rule:style.md",
+        "label": "style.md",
+        "kind": "rule",
+        "scope": "project",
+        "load": "always",
+        "source": "~/dev/acme-shop/.claude/rules/style.md"
+      },
+      {
+        "tokens": 450,
+        "detail": {},
+        "id": "command:ship",
+        "label": "ship",
+        "kind": "command",
+        "scope": "project",
+        "load": "on_demand",
+        "source": "~/dev/acme-shop/.claude/commands/ship.md"
+      },
+      {
+        "tokens": 450,
+        "detail": {},
+        "id": "command:review",
+        "label": "review",
+        "kind": "command",
+        "scope": "project",
+        "load": "on_demand",
+        "source": "~/dev/acme-shop/.claude/commands/review.md"
+      },
+      {
+        "tokens": 380,
+        "detail": {},
+        "id": "agent:reviewer",
+        "label": "reviewer",
+        "kind": "agent",
+        "scope": "project",
+        "load": "on_demand",
+        "source": "~/dev/acme-shop/.claude/agents/reviewer.md"
+      },
+      {
+        "tokens": 640,
+        "detail": {
+          "where": "imported by CLAUDE.md"
+        },
+        "id": "import:conventions",
+        "label": "conventions.md",
+        "kind": "claude_md",
+        "scope": "project",
+        "load": "always",
+        "source": "~/dev/acme-shop/docs/conventions.md"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "event": "PostToolUse",
+          "matcher": "Edit|Write"
+        },
+        "id": "hook:project:post",
+        "label": "PostToolUse [Edit|Write]: lint.sh",
+        "kind": "hook",
+        "scope": "project",
+        "load": "runtime",
+        "source": "~/dev/acme-shop/.claude/settings.json"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "transport": "stdio"
+        },
+        "id": "mcp:postgres",
+        "label": "postgres",
+        "kind": "mcp_server",
+        "scope": "project",
+        "load": "config",
+        "source": "~/dev/acme-shop/.mcp.json"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "outputStyle": "Concise"
+        },
+        "id": "settings:local",
+        "label": "settings.local.json",
+        "kind": "settings",
+        "scope": "local",
+        "load": "config",
+        "source": "~/dev/acme-shop/.claude/settings.local.json"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "transport": "http"
+        },
+        "id": "mcp:sentry",
+        "label": "sentry",
+        "kind": "mcp_server",
+        "scope": "local",
+        "load": "config",
+        "source": "~/.claude.json"
+      },
+      {
+        "tokens": 2100,
+        "detail": {
+          "count": 18
+        },
+        "id": "session:skill_listing",
+        "label": "skill listing (18)",
+        "kind": "skill_listing",
+        "scope": "session",
+        "load": "always",
+        "source": "transcript"
+      },
+      {
+        "tokens": 330,
+        "detail": {},
+        "id": "session:output_style",
+        "label": "output style: Concise",
+        "kind": "output_style",
+        "scope": "session",
+        "load": "always",
+        "source": "transcript"
+      },
+      {
+        "tokens": 248,
+        "detail": {
+          "count": 9
+        },
+        "id": "tools:postgres",
+        "label": "postgres tools (9)",
+        "kind": "tool_group",
+        "scope": "session",
+        "load": "deferred",
+        "source": "transcript"
+      },
+      {
+        "tokens": 770,
+        "detail": {
+          "count": 22
+        },
+        "id": "tools:sentry",
+        "label": "sentry tools (22)",
+        "kind": "tool_group",
+        "scope": "session",
+        "load": "deferred",
+        "source": "transcript"
+      },
+      {
+        "tokens": 1333,
+        "detail": {
+          "count": 41
+        },
+        "id": "tools:github",
+        "label": "github tools (41)",
+        "kind": "tool_group",
+        "scope": "session",
+        "load": "deferred",
+        "source": "transcript"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "origin": "connector or plugin, not in config files"
+        },
+        "id": "mcp:github",
+        "label": "github",
+        "kind": "mcp_server",
+        "scope": "session",
+        "load": "config",
+        "source": "transcript"
+      },
+      {
+        "tokens": 540,
+        "detail": {
+          "count": 18
+        },
+        "id": "tools:slack",
+        "label": "slack tools (18)",
+        "kind": "tool_group",
+        "scope": "session",
+        "load": "deferred",
+        "source": "transcript"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "origin": "connector or plugin, not in config files",
+          "status": "needs auth"
+        },
+        "id": "mcp:slack",
+        "label": "slack",
+        "kind": "mcp_server",
+        "scope": "session",
+        "load": "config",
+        "source": "transcript"
+      },
+      {
+        "tokens": 600,
+        "detail": {
+          "count": 24
+        },
+        "id": "tools:playwright",
+        "label": "playwright tools (24)",
+        "kind": "tool_group",
+        "scope": "session",
+        "load": "deferred",
+        "source": "transcript"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "origin": "connector or plugin, not in config files"
+        },
+        "id": "mcp:playwright",
+        "label": "playwright",
+        "kind": "mcp_server",
+        "scope": "session",
+        "load": "config",
+        "source": "transcript"
+      },
+      {
+        "tokens": 560,
+        "detail": {
+          "count": 14
+        },
+        "id": "tools:built-in",
+        "label": "built-in tools (14)",
+        "kind": "tool_group",
+        "scope": "session",
+        "load": "deferred",
+        "source": "transcript"
+      },
+      {
+        "tokens": 420,
+        "detail": {},
+        "id": "mcpinstr:sentry",
+        "label": "sentry instructions",
+        "kind": "mcp_instructions",
+        "scope": "session",
+        "load": "always",
+        "source": "transcript"
+      },
+      {
+        "tokens": 610,
+        "detail": {},
+        "id": "mcpinstr:github",
+        "label": "github instructions",
+        "kind": "mcp_instructions",
+        "scope": "session",
+        "load": "always",
+        "source": "transcript"
+      },
+      {
+        "tokens": 380,
+        "detail": {},
+        "id": "mcpinstr:playwright",
+        "label": "playwright instructions",
+        "kind": "mcp_instructions",
+        "scope": "session",
+        "load": "always",
+        "source": "transcript"
+      },
+      {
+        "tokens": 28479,
+        "detail": {
+          "note": "First-turn total minus everything this map can attribute"
+        },
+        "id": "harness",
+        "label": "harness (system prompt, tool schemas)",
+        "kind": "harness",
+        "scope": "session",
+        "load": "always",
+        "source": "Claude Code"
+      }
+    ],
+    "edges": [
+      {
+        "from": "memory:index",
+        "to": "memory:files",
+        "kind": "indexes"
+      },
+      {
+        "from": "memory:index",
+        "to": "memory:file:hub_release.md",
+        "kind": "links to"
+      },
+      {
+        "from": "memory:file:hub_release.md",
+        "to": "memory:file:deploy_checklist.md",
+        "kind": "links to"
+      },
+      {
+        "from": "memory:file:hub_release.md",
+        "to": "memory:file:release_process.md",
+        "kind": "links to"
+      },
+      {
+        "from": "memory:file:hub_release.md",
+        "to": "memory:file:flaky_tests.md",
+        "kind": "links to"
+      },
+      {
+        "from": "memory:index",
+        "to": "memory:file:hub_api.md",
+        "kind": "links to"
+      },
+      {
+        "from": "memory:file:hub_api.md",
+        "to": "memory:file:api_error_codes.md",
+        "kind": "links to"
+      },
+      {
+        "from": "memory:file:hub_api.md",
+        "to": "memory:file:customer_tiers.md",
+        "kind": "links to"
+      },
+      {
+        "from": "memory:index",
+        "to": "memory:file:style_decisions.md",
+        "kind": "links to"
+      },
+      {
+        "from": "memory:index",
+        "to": "memory:file:oncall_notes.md",
+        "kind": "links to"
+      },
+      {
+        "from": "settings:user",
+        "to": "hook:user:pre",
+        "kind": "registers"
+      },
+      {
+        "from": "settings:user",
+        "to": "plugin:frontend-design",
+        "kind": "enables"
+      },
+      {
+        "from": "plugin:frontend-design",
+        "to": "skill:frontend-design:frontend-design",
+        "kind": "provides"
+      },
+      {
+        "from": "settings:user",
+        "to": "plugin:playwright",
+        "kind": "enables"
+      },
+      {
+        "from": "settings:user",
+        "to": "plugin:docs-helper",
+        "kind": "enables"
+      },
+      {
+        "from": "plugin:docs-helper",
+        "to": "skill:docs-helper:write-docs",
+        "kind": "provides"
+      },
+      {
+        "from": "plugin:docs-helper",
+        "to": "skill:docs-helper:release-notes",
+        "kind": "provides"
+      },
+      {
+        "from": "claudemd:project",
+        "to": "import:conventions",
+        "kind": "imports"
+      },
+      {
+        "from": "claudemd:project",
+        "to": "rule:api.md",
+        "kind": "mentions"
+      },
+      {
+        "from": "claudemd:project",
+        "to": "command:ship",
+        "kind": "mentions"
+      },
+      {
+        "from": "command:ship",
+        "to": "agent:reviewer",
+        "kind": "mentions"
+      },
+      {
+        "from": "rule:frontend.md",
+        "to": "rule:style.md",
+        "kind": "links to"
+      },
+      {
+        "from": "settings:project",
+        "to": "hook:project:post",
+        "kind": "registers"
+      },
+      {
+        "from": "mcp:postgres",
+        "to": "tools:postgres",
+        "kind": "exposes"
+      },
+      {
+        "from": "mcp:sentry",
+        "to": "tools:sentry",
+        "kind": "exposes"
+      },
+      {
+        "from": "mcp:github",
+        "to": "tools:github",
+        "kind": "exposes"
+      },
+      {
+        "from": "mcp:slack",
+        "to": "tools:slack",
+        "kind": "exposes"
+      },
+      {
+        "from": "mcp:playwright",
+        "to": "tools:playwright",
+        "kind": "exposes"
+      },
+      {
+        "from": "mcp:sentry",
+        "to": "mcpinstr:sentry",
+        "kind": "injects"
+      },
+      {
+        "from": "mcp:github",
+        "to": "mcpinstr:github",
+        "kind": "injects"
+      },
+      {
+        "from": "mcp:playwright",
+        "to": "mcpinstr:playwright",
+        "kind": "injects"
+      },
+      {
+        "from": "plugin:playwright",
+        "to": "mcp:playwright",
+        "kind": "provides"
+      }
+    ]
+  },
+  {
+    "version": 1,
+    "harness": {
+      "id": "codex",
+      "name": "Codex"
+    },
+    "generatedAt": "2026-11-01T09:00:00.000Z",
+    "project": "~/dev/acme-shop (demo data)",
+    "platform": "linux",
+    "session": {
+      "transcript": "demo",
+      "firstTurnTokens": 21400,
+      "model": "gpt-demo",
+      "notes": [
+        "Synthetic demo data"
+      ],
+      "firstTurnUsage": {
+        "uncached": 8600,
+        "cacheWrite": 0,
+        "cacheRead": 12800
+      },
+      "contextWindow": 258400,
+      "contextWindowFrom": "session rollout",
+      "attribution": {
+        "recorded": 21400,
+        "attributed": 10164,
+        "unattributed": 11236
+      },
+      "startedAt": "2026-11-01T08:40:00.000Z"
+    },
+    "totals": {
+      "byLoad": {
+        "config": 0,
+        "runtime": 0,
+        "always": 21400,
+        "on_demand": 3799
+      },
+      "nodes": 64
+    },
+    "nodes": [
+      {
+        "tokens": 0,
+        "detail": {
+          "model": "gpt-demo",
+          "reasoningEffort": "medium",
+          "mcpServers": 5,
+          "affects": [
+            "Picks the model: gpt-demo",
+            "Reasoning effort: medium",
+            "Connects 5 MCP servers",
+            "Trusts 1 project folder, so their own config loads"
+          ]
+        },
+        "id": "settings:user:config.toml",
+        "label": "config.toml",
+        "kind": "settings",
+        "scope": "user",
+        "load": "config",
+        "source": "~/.codex/config.toml"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "transport": "http",
+          "runs": "remote",
+          "runsWhy": "HTTP server on another host (set in config.toml)"
+        },
+        "id": "mcp:github",
+        "label": "github",
+        "kind": "mcp_server",
+        "scope": "user",
+        "load": "config",
+        "source": "~/.codex/config.toml"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "transport": "stdio",
+          "runs": "local",
+          "runsWhy": "stdio process on your machine (set in config.toml)"
+        },
+        "id": "mcp:postgres",
+        "label": "postgres",
+        "kind": "mcp_server",
+        "scope": "user",
+        "load": "config",
+        "source": "~/.codex/config.toml"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "transport": "stdio",
+          "runs": "local",
+          "runsWhy": "stdio process on your machine (set in config.toml)"
+        },
+        "id": "mcp:browser",
+        "label": "browser",
+        "kind": "mcp_server",
+        "scope": "user",
+        "load": "config",
+        "source": "~/.codex/config.toml"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "transport": "stdio",
+          "runs": "remote",
+          "runsWhy": "local command that proxies to a remote server (set in config.toml)"
+        },
+        "id": "mcp:tracing",
+        "label": "tracing",
+        "kind": "mcp_server",
+        "scope": "user",
+        "load": "config",
+        "source": "~/.codex/config.toml"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "transport": "stdio",
+          "runs": "local",
+          "runsWhy": "stdio process on your machine (set in config.toml)",
+          "status": "disabled"
+        },
+        "id": "mcp:old-search",
+        "label": "old-search",
+        "kind": "mcp_server",
+        "scope": "user",
+        "load": "config",
+        "source": "~/.codex/config.toml"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "marketplace": "market"
+        },
+        "id": "plugin:design-kit@market",
+        "label": "design-kit",
+        "kind": "plugin",
+        "scope": "user",
+        "load": "config",
+        "source": "~/.codex/config.toml"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "marketplace": "market"
+        },
+        "id": "plugin:data-tools@market",
+        "label": "data-tools",
+        "kind": "plugin",
+        "scope": "user",
+        "load": "config",
+        "source": "~/.codex/config.toml"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "marketplace": "market"
+        },
+        "id": "plugin:docs-helper@market",
+        "label": "docs-helper",
+        "kind": "plugin",
+        "scope": "user",
+        "load": "config",
+        "source": "~/.codex/config.toml"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "marketplace": "market"
+        },
+        "id": "plugin:release-bot@market",
+        "label": "release-bot",
+        "kind": "plugin",
+        "scope": "user",
+        "load": "config",
+        "source": "~/.codex/config.toml"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "events": [
+            "PreToolUse",
+            "Stop"
+          ],
+          "affects": [
+            "Runs hooks on PreToolUse, Stop"
+          ]
+        },
+        "id": "settings:user:hooks.json",
+        "label": "hooks.json",
+        "kind": "settings",
+        "scope": "user",
+        "load": "config",
+        "source": "~/.codex/hooks.json"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "event": "PreToolUse",
+          "matcher": "Bash",
+          "type": "command"
+        },
+        "id": "hook:user:PreToolUse:0:0",
+        "label": "PreToolUse [Bash]: guard.sh",
+        "kind": "hook",
+        "scope": "user",
+        "load": "runtime",
+        "source": "~/.codex/hooks.json"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "event": "Stop",
+          "matcher": "*",
+          "type": "command"
+        },
+        "id": "hook:user:Stop:0:0",
+        "label": "Stop: notify.sh",
+        "kind": "hook",
+        "scope": "user",
+        "load": "runtime",
+        "source": "~/.codex/hooks.json"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "events": [
+            "PostToolUse"
+          ],
+          "affects": [
+            "Runs hooks on PostToolUse"
+          ]
+        },
+        "id": "settings:project:hooks.json",
+        "label": "hooks.json",
+        "kind": "settings",
+        "scope": "project",
+        "load": "config",
+        "source": ".codex/hooks.json"
+      },
+      {
+        "tokens": 0,
+        "detail": {
+          "event": "PostToolUse",
+          "matcher": "Edit",
+          "type": "command"
+        },
+        "id": "hook:project:PostToolUse:0:0",
+        "label": "PostToolUse [Edit]: lint.sh",
+        "kind": "hook",
+        "scope": "project",
+        "load": "runtime",
+        "source": ".codex/hooks.json"
+      },
+      {
+        "tokens": 435,
+        "detail": {
+          "confirmedInSession": true
+        },
+        "id": "agentsmd:~/.codex/AGENTS.md",
+        "label": "AGENTS.md",
+        "kind": "agents_md",
+        "scope": "user",
+        "load": "always",
+        "source": "~/.codex/AGENTS.md",
+        "outline": [
+          {
+            "level": 1,
+            "title": "Personal",
+            "tokens": 3
+          },
+          {
+            "level": 2,
+            "title": "Style",
+            "tokens": 288
+          },
+          {
+            "level": 2,
+            "title": "Git",
+            "tokens": 145
+          }
+        ]
+      },
+      {
+        "tokens": 1294,
+        "detail": {
+          "confirmedInSession": true
+        },
+        "id": "agentsmd:~/dev/acme-shop/AGENTS.md",
+        "label": "AGENTS.md",
+        "kind": "agents_md",
+        "scope": "project",
+        "load": "always",
+        "source": "AGENTS.md",
+        "outline": [
+          {
+            "level": 1,
+            "title": "Acme shop",
+            "tokens": 3
+          },
+          {
+            "level": 2,
+            "title": "Setup",
+            "tokens": 430
+          },
+          {
+            "level": 2,
+            "title": "Testing",
+            "tokens": 573
+          },
+          {
+            "level": 2,
+            "title": "Deploy",
+            "tokens": 288
+          }
+        ]
+      },
+      {
+        "tokens": 584,
+        "detail": {
+          "from": "~/.agents/skills"
+        },
+        "id": "skill:user:changelog",
+        "label": "changelog",
+        "kind": "skill",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.agents/skills/changelog/SKILL.md",
+        "outline": [
+          {
+            "level": 0,
+            "title": "(frontmatter)",
+            "tokens": 14
+          },
+          {
+            "level": 0,
+            "title": "(before first heading)",
+            "tokens": 570
+          }
+        ]
+      },
+      {
+        "tokens": 584,
+        "detail": {
+          "from": "~/.agents/skills"
+        },
+        "id": "skill:user:pr-review",
+        "label": "pr-review",
+        "kind": "skill",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.agents/skills/pr-review/SKILL.md",
+        "outline": [
+          {
+            "level": 0,
+            "title": "(frontmatter)",
+            "tokens": 14
+          },
+          {
+            "level": 0,
+            "title": "(before first heading)",
+            "tokens": 570
+          }
+        ]
+      },
+      {
+        "tokens": 586,
+        "detail": {
+          "from": "~/.agents/skills"
+        },
+        "id": "skill:user:release-notes",
+        "label": "release-notes",
+        "kind": "skill",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.agents/skills/release-notes/SKILL.md",
+        "outline": [
+          {
+            "level": 0,
+            "title": "(frontmatter)",
+            "tokens": 16
+          },
+          {
+            "level": 0,
+            "title": "(before first heading)",
+            "tokens": 570
+          }
+        ]
+      },
+      {
+        "tokens": 584,
+        "detail": {
+          "from": "~/.agents/skills"
+        },
+        "id": "skill:user:screenshot",
+        "label": "screenshot",
+        "kind": "skill",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.agents/skills/screenshot/SKILL.md",
+        "outline": [
+          {
+            "level": 0,
+            "title": "(frontmatter)",
+            "tokens": 14
+          },
+          {
+            "level": 0,
+            "title": "(before first heading)",
+            "tokens": 570
+          }
+        ]
+      },
+      {
+        "tokens": 582,
+        "detail": {
+          "from": "~/.agents/skills"
+        },
+        "id": "skill:user:triage",
+        "label": "triage",
+        "kind": "skill",
+        "scope": "user",
+        "load": "on_demand",
+        "source": "~/.agents/skills/triage/SKILL.md",
+        "outline": [
+          {
+            "level": 0,
+            "title": "(frontmatter)",
+            "tokens": 12
+          },
+          {
+            "level": 0,
+            "title": "(before first heading)",
+            "tokens": 570
+          }
+        ]
+      },
+      {
+        "tokens": 440,
+        "detail": {
+          "from": ".agents/skills in the repo"
+        },
+        "id": "skill:project:db-migrate",
+        "label": "db-migrate",
+        "kind": "skill",
+        "scope": "project",
+        "load": "on_demand",
+        "source": ".agents/skills/db-migrate/SKILL.md",
+        "outline": [
+          {
+            "level": 0,
+            "title": "(frontmatter)",
+            "tokens": 12
+          },
+          {
+            "level": 0,
+            "title": "(before first heading)",
+            "tokens": 428
+          }
+        ]
+      },
+      {
+        "tokens": 439,
+        "detail": {
+          "from": ".agents/skills in the repo"
+        },
+        "id": "skill:project:seed-data",
+        "label": "seed-data",
+        "kind": "skill",
+        "scope": "project",
+        "load": "on_demand",
+        "source": ".agents/skills/seed-data/SKILL.md",
+        "outline": [
+          {
+            "level": 0,
+            "title": "(frontmatter)",
+            "tokens": 12
+          },
+          {
+            "level": 0,
+            "title": "(before first heading)",
+            "tokens": 428
+          }
+        ]
+      },
+      {
+        "tokens": 5415,
+        "detail": {
+          "note": "Codex's base instructions, recorded at session start"
+        },
+        "id": "harness:base",
+        "label": "system prompt",
+        "kind": "harness",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 2055,
+        "detail": {
+          "count": 33,
+          "note": "Name and description of every skill, sent every session"
+        },
+        "id": "session:skill_listing",
+        "label": "skill listing (33)",
+        "kind": "skill_listing",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 54,
+        "detail": {
+          "from": "~/.agents/skills"
+        },
+        "id": "skill_entry:~/.agents/skills:release-notes",
+        "label": "release-notes",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 52,
+        "detail": {
+          "from": "~/.agents/skills"
+        },
+        "id": "skill_entry:~/.agents/skills:pr-review",
+        "label": "pr-review",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 52,
+        "detail": {
+          "from": "~/.agents/skills"
+        },
+        "id": "skill_entry:~/.agents/skills:changelog",
+        "label": "changelog",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 50,
+        "detail": {
+          "from": "~/.agents/skills"
+        },
+        "id": "skill_entry:~/.agents/skills:triage",
+        "label": "triage",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 52,
+        "detail": {
+          "from": "~/.agents/skills"
+        },
+        "id": "skill_entry:~/.agents/skills:screenshot",
+        "label": "screenshot",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 51,
+        "detail": {
+          "from": "built into Codex"
+        },
+        "id": "skill_entry:built into Codex:imagegen",
+        "label": "imagegen",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 54,
+        "detail": {
+          "from": "built into Codex"
+        },
+        "id": "skill_entry:built into Codex:skill-creator",
+        "label": "skill-creator",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 53,
+        "detail": {
+          "from": "built into Codex"
+        },
+        "id": "skill_entry:built into Codex:openai-docs",
+        "label": "openai-docs",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin design-kit"
+        },
+        "id": "skill_entry:plugin design-kit:design-kit:skill-0",
+        "label": "design-kit:skill-0",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin design-kit"
+        },
+        "id": "skill_entry:plugin design-kit:design-kit:skill-1",
+        "label": "design-kit:skill-1",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin design-kit"
+        },
+        "id": "skill_entry:plugin design-kit:design-kit:skill-2",
+        "label": "design-kit:skill-2",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin design-kit"
+        },
+        "id": "skill_entry:plugin design-kit:design-kit:skill-3",
+        "label": "design-kit:skill-3",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin design-kit"
+        },
+        "id": "skill_entry:plugin design-kit:design-kit:skill-4",
+        "label": "design-kit:skill-4",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin design-kit"
+        },
+        "id": "skill_entry:plugin design-kit:design-kit:skill-5",
+        "label": "design-kit:skill-5",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin design-kit"
+        },
+        "id": "skill_entry:plugin design-kit:design-kit:skill-6",
+        "label": "design-kit:skill-6",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin design-kit"
+        },
+        "id": "skill_entry:plugin design-kit:design-kit:skill-7",
+        "label": "design-kit:skill-7",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin design-kit"
+        },
+        "id": "skill_entry:plugin design-kit:design-kit:skill-8",
+        "label": "design-kit:skill-8",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin design-kit"
+        },
+        "id": "skill_entry:plugin design-kit:design-kit:skill-9",
+        "label": "design-kit:skill-9",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 57,
+        "detail": {
+          "from": "plugin design-kit"
+        },
+        "id": "skill_entry:plugin design-kit:design-kit:skill-10",
+        "label": "design-kit:skill-10",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 57,
+        "detail": {
+          "from": "plugin design-kit"
+        },
+        "id": "skill_entry:plugin design-kit:design-kit:skill-11",
+        "label": "design-kit:skill-11",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 57,
+        "detail": {
+          "from": "plugin design-kit"
+        },
+        "id": "skill_entry:plugin design-kit:design-kit:skill-12",
+        "label": "design-kit:skill-12",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 57,
+        "detail": {
+          "from": "plugin design-kit"
+        },
+        "id": "skill_entry:plugin design-kit:design-kit:skill-13",
+        "label": "design-kit:skill-13",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin data-tools"
+        },
+        "id": "skill_entry:plugin data-tools:data-tools:skill-0",
+        "label": "data-tools:skill-0",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin data-tools"
+        },
+        "id": "skill_entry:plugin data-tools:data-tools:skill-1",
+        "label": "data-tools:skill-1",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin data-tools"
+        },
+        "id": "skill_entry:plugin data-tools:data-tools:skill-2",
+        "label": "data-tools:skill-2",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin data-tools"
+        },
+        "id": "skill_entry:plugin data-tools:data-tools:skill-3",
+        "label": "data-tools:skill-3",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin data-tools"
+        },
+        "id": "skill_entry:plugin data-tools:data-tools:skill-4",
+        "label": "data-tools:skill-4",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin data-tools"
+        },
+        "id": "skill_entry:plugin data-tools:data-tools:skill-5",
+        "label": "data-tools:skill-5",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin data-tools"
+        },
+        "id": "skill_entry:plugin data-tools:data-tools:skill-6",
+        "label": "data-tools:skill-6",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin data-tools"
+        },
+        "id": "skill_entry:plugin data-tools:data-tools:skill-7",
+        "label": "data-tools:skill-7",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 56,
+        "detail": {
+          "from": "plugin data-tools"
+        },
+        "id": "skill_entry:plugin data-tools:data-tools:skill-8",
+        "label": "data-tools:skill-8",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 52,
+        "detail": {
+          "from": "repo"
+        },
+        "id": "skill_entry:repo:db-migrate",
+        "label": "db-migrate",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 52,
+        "detail": {
+          "from": "repo"
+        },
+        "id": "skill_entry:repo:seed-data",
+        "label": "seed-data",
+        "kind": "skill_entry",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 85,
+        "detail": {
+          "role": "developer",
+          "note": "Added by Codex before your first prompt"
+        },
+        "id": "harness:permissions_instructions",
+        "label": "permissions instructions",
+        "kind": "harness_block",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 267,
+        "detail": {
+          "role": "developer",
+          "note": "Added by Codex before your first prompt"
+        },
+        "id": "harness:collaboration_mode",
+        "label": "collaboration mode",
+        "kind": "harness_block",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 579,
+        "detail": {
+          "role": "developer",
+          "note": "Added by Codex before your first prompt"
+        },
+        "id": "harness:multi_agent_role",
+        "label": "multi agent role",
+        "kind": "harness_block",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 34,
+        "detail": {
+          "role": "user",
+          "note": "Added by Codex before your first prompt"
+        },
+        "id": "harness:environment_context",
+        "label": "environment context",
+        "kind": "harness_block",
+        "scope": "session",
+        "load": "always",
+        "source": "the last session's log"
+      },
+      {
+        "tokens": 11236,
+        "detail": {
+          "note": "Not measured directly: the recorded first-turn total minus every piece this map can size",
+          "unattributed": true
+        },
+        "id": "harness",
+        "label": "harness (tool schemas, wrappers)",
+        "kind": "harness",
+        "scope": "session",
+        "load": "always",
+        "source": "Codex"
+      }
+    ],
+    "edges": [
+      {
+        "from": "settings:user:config.toml",
+        "to": "mcp:github",
+        "kind": "configures"
+      },
+      {
+        "from": "settings:user:config.toml",
+        "to": "mcp:postgres",
+        "kind": "configures"
+      },
+      {
+        "from": "settings:user:config.toml",
+        "to": "mcp:browser",
+        "kind": "configures"
+      },
+      {
+        "from": "settings:user:config.toml",
+        "to": "mcp:tracing",
+        "kind": "configures"
+      },
+      {
+        "from": "settings:user:config.toml",
+        "to": "mcp:old-search",
+        "kind": "configures"
+      },
+      {
+        "from": "settings:user:config.toml",
+        "to": "plugin:design-kit@market",
+        "kind": "enables"
+      },
+      {
+        "from": "settings:user:config.toml",
+        "to": "plugin:data-tools@market",
+        "kind": "enables"
+      },
+      {
+        "from": "settings:user:config.toml",
+        "to": "plugin:docs-helper@market",
+        "kind": "enables"
+      },
+      {
+        "from": "settings:user:config.toml",
+        "to": "plugin:release-bot@market",
+        "kind": "enables"
+      },
+      {
+        "from": "settings:user:hooks.json",
+        "to": "hook:user:PreToolUse:0:0",
+        "kind": "registers"
+      },
+      {
+        "from": "settings:user:hooks.json",
+        "to": "hook:user:Stop:0:0",
+        "kind": "registers"
+      },
+      {
+        "from": "settings:project:hooks.json",
+        "to": "hook:project:PostToolUse:0:0",
+        "kind": "registers"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:~/.agents/skills:release-notes",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:~/.agents/skills:pr-review",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:~/.agents/skills:changelog",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:~/.agents/skills:triage",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:~/.agents/skills:screenshot",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:built into Codex:imagegen",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:built into Codex:skill-creator",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:built into Codex:openai-docs",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin design-kit:design-kit:skill-0",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin design-kit:design-kit:skill-1",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin design-kit:design-kit:skill-2",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin design-kit:design-kit:skill-3",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin design-kit:design-kit:skill-4",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin design-kit:design-kit:skill-5",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin design-kit:design-kit:skill-6",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin design-kit:design-kit:skill-7",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin design-kit:design-kit:skill-8",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin design-kit:design-kit:skill-9",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin design-kit:design-kit:skill-10",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin design-kit:design-kit:skill-11",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin design-kit:design-kit:skill-12",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin design-kit:design-kit:skill-13",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin data-tools:data-tools:skill-0",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin data-tools:data-tools:skill-1",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin data-tools:data-tools:skill-2",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin data-tools:data-tools:skill-3",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin data-tools:data-tools:skill-4",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin data-tools:data-tools:skill-5",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin data-tools:data-tools:skill-6",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin data-tools:data-tools:skill-7",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:plugin data-tools:data-tools:skill-8",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:repo:db-migrate",
+        "kind": "lists"
+      },
+      {
+        "from": "session:skill_listing",
+        "to": "skill_entry:repo:seed-data",
+        "kind": "lists"
+      }
+    ]
+  }
+]

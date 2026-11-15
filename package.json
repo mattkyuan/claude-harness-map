@@ -1,0 +1,31 @@
+{
+  "name": "claude-harness-map",
+  "version": "0.1.0",
+  "description": "An interactive 3D map of what Claude Code or Codex loads into context, and where each piece comes from.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "claude-harness-map": "scan.mjs"
+  },
+  "files": [
+    "scan.mjs",
+    "lib/",
+    "adapters/",
+    "viewer/"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "scan": "node scan.mjs",
+    "demo": "node demo/make-demo.mjs && node scan.mjs --from demo/snapshot.json --out docs --name index.html",
+    "test": "node --test tests/"
+  },
+  "keywords": [
+    "claude-code",
+    "context",
+    "visualization",
+    "mcp",
+    "3d"
+  ]
+}

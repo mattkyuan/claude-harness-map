@@ -1,0 +1,1405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Harness Map</title>
+<style>
+  :root {
+    --bg: #0d0f14; --panel: #161a22e6; --text: #e6e8ee; --muted: #a3abbd; --faint: #7b8396; --line: #2a3040;
+    /* One palette, by what a piece is. The bar, the legend and the nodes all use it. */
+    --c-harness: #c9785a; --c-instructions: #f2a65a; --c-skills: #e8cf6a; --c-mcp: #b48ce8;
+    --c-tools: #7d8cff; --c-ondemand: #6cc4a1; --c-wiring: #9aa3b5;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13px/1.45 ui-sans-serif, system-ui, -apple-system, sans-serif; overflow: hidden; }
+  /* Dotted canvas behind the transparent 3D scene, with a soft vignette. */
+  #graph { position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 55%, transparent 0%, var(--bg) 85%),
+      radial-gradient(circle, #ffffff1f 1px, transparent 1.4px) 0 0 / 22px 22px,
+      var(--bg); }
+  .panel { position: fixed; background: var(--panel); backdrop-filter: blur(8px); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  #top { top: 12px; left: 12px; right: 12px; display: flex; flex-direction: column; gap: 8px; }
+  #top h1 { font-size: 16px; margin: 0; font-weight: 650; }
+  #title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .db h3.sub { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); margin: 12px 0 4px; font-weight: 600; }
+  .db ul.affects { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.5; }
+  #nav { position: fixed; right: 16px; bottom: 16px; z-index: 20; display: grid; grid-template-columns: repeat(3, 34px); gap: 4px; transition: right .22s ease, bottom .22s ease; }
+  #nav button { width: 34px; height: 34px; font: 600 15px/1 system-ui, sans-serif; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; backdrop-filter: blur(8px); }
+  #nav button:hover, #nav button:focus-visible { background: #2a3040; outline: none; }
+  #nav .home { grid-column: 2; grid-row: 2; font-size: 16px; }
+  body:has(#side.open) #nav { right: 396px; }
+  @media (max-width: 640px) { body:has(#side.open) #nav { right: 16px; bottom: calc(42% + 12px); } #nav { grid-template-columns: repeat(3, 40px); } #nav button { width: 40px; height: 40px; } }
+  .serve-btn { font: inherit; font-size: 13px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--line); background: #ffffff0d; color: var(--text); cursor: pointer; }
+  .serve-btn:disabled { opacity: .6; cursor: default; }
+  #folder-pop { top: 52px; left: 16px; width: min(420px, calc(100vw - 32px)); z-index: 30; display: flex; flex-direction: column; gap: 8px; }
+  #folder-pop[hidden] { display: none; }
+  #folder-pop .fp-row { display: flex; gap: 8px; align-items: center; }
+  #folder-pop input { flex: 1; min-width: 0; font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); background: #ffffff0d; border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; }
+  #project-btn { font: 650 14px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); background: #ffffff0d; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; cursor: pointer; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #folder-pop .fp-head { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); margin: 2px 8px 0; }
+  #folder-pop .fp-mapped { display: flex; flex-direction: column; max-height: 160px; overflow-y: auto; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+  #folder-pop .fp-mapped button[aria-current] { color: var(--text); font-weight: 650; }
+  #folder-pop .fp-mapped button, #folder-pop .fp-list button { text-align: left; font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); background: none; border: 0; border-radius: 6px; padding: 4px 8px; cursor: pointer; }
+  #folder-pop .fp-mapped button:hover, #folder-pop .fp-mapped button:focus { background: #ffffff14; outline: none; }
+  #folder-pop .fp-list { max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; }
+  #folder-pop .fp-list button { text-align: left; font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); background: none; border: 0; border-radius: 6px; padding: 4px 8px; cursor: pointer; }
+  #folder-pop .fp-list button:hover, #folder-pop .fp-list button:focus { background: #ffffff14; outline: none; }
+  #folder-pop .fp-empty { color: var(--muted); font-size: 12px; margin: 4px 8px; }
+  #folder-pop .fp-status { flex: 1; color: var(--muted); font-size: 12px; }
+  #picks { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; min-width: 0; }
+  #project-pick { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+  #project-pick b { font-size: 14px; font-weight: 650; color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #ffffff0d; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #project-pick select { font: inherit; font-size: 14px; font-weight: 650; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); background: #ffffff0d; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; cursor: pointer; max-width: 46vw; }
+  #harness-pick select:disabled { cursor: default; opacity: .8; }
+  #harness-pick { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+  #harness-pick select { font: inherit; font-size: 14px; font-weight: 650; color: var(--text); background: #ffffff0d; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; cursor: pointer; }
+  #top h1 small { font-weight: 400; color: var(--muted); font-size: 13px; margin-left: 6px; }
+  #def { color: var(--muted); font-size: 12.5px; margin-top: -4px; }
+  #def b { color: var(--text); font-weight: 600; }
+  #donut.muted { filter: grayscale(1); opacity: 0.45; }
+  #takeaway { font-size: 14px; }
+  #play-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  #play-session { background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 4px 12px; font: inherit; font-weight: 650; cursor: pointer; }
+  #turn-scrub input { width: 140px; vertical-align: middle; accent-color: var(--c-instructions); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  #play { background: var(--c-instructions); color: #1a1208; border: 0; border-radius: 6px; padding: 4px 12px; font: inherit; font-weight: 650; cursor: pointer; }
+  #play:hover { filter: brightness(1.1); }
+  #packet-status { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  #packet-status b { color: var(--text); }
+  #window-select { background: #0d0f14; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 2px 4px; font: inherit; font-size: 12px; }
+  #takeaway b { font-weight: 650; }
+  #takeaway .src { display: block; margin-top: 3px; font-size: 11.5px; color: var(--muted); }
+  #takeaway .warn { color: #e0a458; }
+  #side p.note { font-size: 12px; color: #e0a458; }
+  #meta { color: var(--faint); font-size: 11.5px; }
+  #hero { display: flex; gap: 16px; align-items: center; }
+  #donut { width: 108px; height: 108px; flex: none; }
+  #donut circle { transition: stroke-width 0.15s; }
+  #donut circle:hover { stroke-width: 17; }
+  #donut .total { fill: var(--text); font-size: 21px; font-weight: 700; }
+  #donut .unit { fill: var(--muted); font-size: 9.5px; }
+  #hero-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  #tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; }
+  .tile { background: #ffffff08; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+  .tile .k { color: var(--muted); font-size: 11px; }
+  .tile .v { font-size: 17px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .tile .v small { font-size: 11px; font-weight: 400; color: var(--muted); margin-left: 3px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .legend .key { color: var(--faint); }
+  .sw.ring { background: none !important; border: 1.5px dashed var(--c-ondemand); border-radius: 50%; }
+  .sw.dot { border-radius: 50%; }
+  #opts summary { cursor: pointer; color: var(--muted); font-size: 12px; user-select: none; }
+  #controls { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-top: 6px; }
+  #controls label { color: var(--muted); font-size: 12px; cursor: pointer; user-select: none; }
+  /* Toggles render as pills; the checkbox stays in the DOM for keyboard and screen readers. */
+  #controls label.pill { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border: 1px solid var(--line); border-radius: 999px; background: #ffffff06; transition: background .15s, border-color .15s, color .15s; }
+  #controls label.pill[hidden] { display: none; }
+  #controls label.pill input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+  #controls label.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid currentColor; opacity: .7; }
+  #controls label.pill:hover { border-color: var(--muted); color: var(--text); }
+  #controls label.pill:has(input:checked) { background: #ffffff14; border-color: #ffffff38; color: var(--text); }
+  #controls label.pill:has(input:checked)::before { background: var(--c-instructions); border-color: var(--c-instructions); opacity: 1; }
+  #controls label.pill:has(input:focus-visible) { outline: 2px solid var(--c-instructions); outline-offset: 2px; }
+  #controls .grp { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-left: 12px; border-left: 1px solid var(--line); }
+  #controls .grp[hidden] { display: none; }
+  #controls .pill-btn { font: inherit; font-size: 12px; color: var(--muted); padding: 4px 11px; border: 1px dashed var(--line); border-radius: 999px; background: none; cursor: pointer; }
+  #controls .pill-btn:hover { color: var(--text); border-color: var(--muted); }
+  #controls .pill-btn[hidden] { display: none; }
+  #controls .gl { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); margin-right: 2px; }
+  #search { background: #0d0f14; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; width: 180px; }
+  #rank { left: 12px; width: 280px; font-size: 12px; }
+  #rank h3, #side h3 { font-size: 12px; margin: 0 0 6px; color: var(--muted); font-weight: 600; }
+  #rank ol { list-style: none; margin: 0; padding: 0; }
+  #rank .rank-more { margin-top: 6px; width: 100%; background: #ffffff0a; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 4px; font: inherit; font-size: 12px; cursor: pointer; }
+  #rank .rank-more:hover { color: var(--text); }
+  #rank li { display: grid; grid-template-columns: 14px 1fr auto auto; gap: 6px; align-items: center; padding: 3px 4px; border-radius: 5px; cursor: pointer; }
+  #rank li:hover, #rank li:focus { background: #ffffff10; outline: none; }
+  #rank .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #rank .tk, #rank .pc { font-variant-numeric: tabular-nums; color: var(--muted); }
+  #rank .rb { grid-column: 2 / -1; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin: -1px 0 3px; }
+  #rank .rb span { display: block; height: 100%; min-width: 2px; border-radius: 2px; }
+  #budget { left: 300px; width: 48px; padding: 8px 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+  #budget .bv { color: var(--text); font-weight: 650; font-variant-numeric: tabular-nums; }
+  #budget .bt { position: relative; width: 14px; flex: 1; border: 1px solid var(--line); border-radius: 4px; background: #ffffff08; overflow: hidden; }
+  #budget .bf { position: absolute; left: 0; right: 0; bottom: 0; height: 100%; display: flex; flex-direction: column-reverse; }
+  #budget .bf span { display: block; flex: none; }
+  #budget .bf span.resent { opacity: .45; }
+  /* Detail drawer: slides in from the right, header pinned, body scrolls. */
+  #side { right: 0; bottom: 0; width: 380px; padding: 0; display: flex; flex-direction: column; border-radius: 12px 0 0 0; border-right: 0; border-bottom: 0;
+    transform: translateX(105%); transition: transform 0.22s ease; box-shadow: -12px 0 32px #0007; }
+  #side.open { transform: none; }
+  #side .dh { padding: 14px 16px 0; border-bottom: 1px solid var(--line); position: relative; }
+  #side .db { padding: 12px 16px 16px; overflow: auto; flex: 1; }
+  #side .dt { color: var(--muted); font-size: 11.5px; margin-bottom: 2px; }
+  #side .dm { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0 8px; }
+  #side .dm .v { font-size: 15px; }
+  #side .tabs { display: flex; gap: 2px; margin-top: 6px; }
+  #side .tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); font: inherit; font-size: 12.5px; padding: 8px 10px; cursor: pointer; }
+  #side .tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--c-instructions); }
+  #side .tabs button:hover { color: var(--text); }
+  #side > h2, #side > p, #side > dl { margin-left: 16px; margin-right: 16px; }
+  #side > h2 { margin-top: 14px; }
+  #side h2 { font-size: 15px; margin: 0 0 6px; word-break: break-word; padding-right: 22px; }
+  #side dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 8px 0 0; font-size: 12px; }
+  #side dt { color: var(--muted); }
+  #side dd { margin: 0; word-break: break-word; }
+  #side .close { position: absolute; right: 8px; top: 6px; cursor: pointer; color: var(--muted); border: 0; background: none; font-size: 18px; }
+  #side .act { margin: 4px 0 2px; background: #ffffff12; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; font: inherit; }
+  #side .analogy { margin: 6px 0 0; padding: 8px 10px; border-left: 3px solid var(--c-instructions); background: #ffffff0a; border-radius: 4px; font-size: 12px; }
+  #compare-wrap[hidden] { display: none; }
+  .struct { list-style: none; margin: 0; padding: 0; font-size: 12px; }
+  .struct li { position: relative; display: flex; gap: 6px; padding-top: 2px; padding-bottom: 4px; }
+  .struct-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .struct-tok { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .struct-bar { position: absolute; left: 0; bottom: 1px; height: 2px; background: var(--c-instructions); opacity: 0.7; border-radius: 1px; }
+  .help { bottom: 12px; left: 12px; font-size: 12px; color: var(--muted); max-width: 380px; }
+  .help b { color: var(--text); font-weight: 600; }
+  .help[hidden] { display: none; }
+  .help .short { display: none; }
+  @media (max-width: 640px) {
+    #top { gap: 6px; padding: 10px 12px; }
+    #meta, #legend, #budget { display: none; }
+    #def { font-size: 11.5px; }
+    #rank { right: 12px; width: auto; padding: 8px 12px; }
+    #rank .rb { display: none; }
+    #takeaway { font-size: 13px; }
+    #hero { gap: 12px; align-items: flex-start; }
+    #donut { width: 76px; height: 76px; }
+    #tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+    .tile { padding: 3px 7px; }
+    #tiles .tile:first-child, #tiles .tile .v small { display: none; } /* the donut already shows the total */
+    .tile .k { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tile .v { font-size: 14px; }
+    body:has(#side.open) .help, body:has(#side.open) #rank { display: none; }
+    .legend { font-size: 11px; gap: 2px 10px; }
+    #search { width: 100%; }
+    #side { left: 0; right: 0; width: auto; top: auto !important; bottom: 0; height: 42%; border-radius: 14px 14px 0 0; border-left: 0; transform: translateY(105%); }
+    #side.open { transform: none; }
+    .help { max-width: none; right: 12px; padding: 8px 12px; }
+    .help .long { display: none; }
+    .help .short { display: block; }
+  }
+</style>
+</head>
+<body>
+<div id="graph"></div>
+
+<div id="top" class="panel">
+  <h1>Claude Harness Map</h1>
+  <div id="def"><b>Context</b> is everything the model reads on each turn. It has no other memory, so this map shows what Claude Code puts there before you type.</div>
+  <div id="hero">
+    <svg id="donut" viewBox="0 0 120 120" role="img" aria-label="First-turn tokens by category"></svg>
+    <div id="hero-text">
+      <div id="takeaway"></div>
+      <div id="play-row"><button id="play" type="button">Play turn 1</button><button id="play-session" type="button" hidden></button><label id="turn-scrub" hidden><span class="sr">Turn</span><input type="range" min="1" value="1" aria-label="Which turn to show"></label><span id="packet-status">Watch the pieces stack into what the model receives.</span></div>
+      <div id="tiles"></div>
+    </div>
+  </div>
+  <div id="legend" class="legend"></div>
+  <div id="meta"></div>
+  <details id="opts" open>
+    <summary>Filters and options</summary>
+    <div id="controls">
+      <input id="search" type="search" placeholder="Search" aria-label="Search nodes">
+      <div class="grp" role="group" aria-label="Show"><span class="gl">Show</span>
+        <label class="pill"><input type="checkbox" data-show="context" checked>in context</label>
+        <label class="pill"><input type="checkbox" data-show="on_demand" checked>on demand</label>
+        <label class="pill"><input type="checkbox" data-show="wiring" checked>wiring</label>
+      </div>
+      <div class="grp" role="group" aria-label="Unfold"><span class="gl">Unfold</span>
+        <label class="pill" title="Unfold MEMORY.md and every memory file that links to others"><input type="checkbox" id="expand-memory">memory</label>
+        <label class="pill" title="Split the skill listing into one node per skill"><input type="checkbox" id="expand-skills">skills</label>
+        <label class="pill" title="Show what each plugin brings: its servers and skills"><input type="checkbox" id="expand-plugins">plugins</label>
+        <label class="pill" title="Show every MCP server's tools and instructions as separate nodes"><input type="checkbox" id="expand-all">servers</label>
+        <button type="button" class="pill-btn" id="collapse-all" title="Collapse every expanded piece" hidden>collapse all</button>
+      </div>
+      <div class="grp" role="group" aria-label="View"><span class="gl">View</span>
+        <label class="pill" title="Explain each piece in everyday terms"><input type="checkbox" id="analogy">explain</label>
+        <label class="pill" title="Show every scope's floor, including ones nothing comes from"><input type="checkbox" id="show-empty">empty floors</label>
+        <label class="pill" id="compare-wrap" title="Color nodes by change since the previous scan"><input type="checkbox" id="compare">compare to last scan</label>
+        <label title="The model's context window, from the session when it records one.">window <select id="window-select"><option value="200000">200k</option><option value="1000000">1M</option></select></label>
+      </div>
+    </div>
+  </details>
+</div>
+
+<div id="rank" class="panel" aria-label="Biggest pieces in context"></div>
+<div id="budget" class="panel" aria-label="Context window used"><div class="bk"></div><div class="bt"><div class="bf"></div></div><div class="bv"></div></div>
+<aside id="side" class="panel" aria-label="Details" aria-hidden="true"></aside>
+
+<div id="help" class="panel help">
+  <div class="long">
+    <b>Floors</b> are where a piece comes from: <span id="help-floors">managed (organization policy), user, project, local, session</span>. An empty floor is hidden.<br>
+    <b>Rings</b> are when it loads. Inside: always<span id="help-deferred">, names only (deferred tools)</span>. Outside, not in context: wiring, on demand.<br><b>Shape</b> is what it is, <b>finish</b> is when it loads, <b>size</b> is tokens.<br>
+    <b>Lines</b> are relationships: a plugin provides a server, a file imports, links to or mentions another. <span id="perm-lines-help" hidden>Green, amber and red lines run from a settings file to a server whose tools its permission rules allow, ask about or block (pre-approved, needs sign-off, blocked).</span><br>
+    Drag to rotate, scroll or pinch to zoom, or use the buttons at the bottom right (arrow keys, + and −, 0 to reorient). Click a node or a row for details.
+  </div>
+  <div class="short">Floors: where it comes from. Inner rings: in context. Drag to rotate, tap a node.</div>
+</div>
+<div id="help-analogy" class="panel help" hidden>
+  The model is a <b>sharp temp, booked for one session</b>. The agency sends them in with an <b>onboarding binder</b>, which is what this map shows. They keep no notes of their own: before every reply they reread that same binder plus the whole email thread so far, mostly from a cheap photocopy. When the session ends, so does the contract, and the next session gets a fresh temp with the same binder.<br>
+  <b>Inner ring</b>: pages in the binder, reread before every reply. <b>Next ring</b>: the apps on their laptop, names only; the help page opens on first use. <b>Outer</b>: training guides and old notes pulled from the shared drive when a task needs them. <b>Wiring</b>: what IT and compliance enforce: laptop locks, approvals, automatic checks. It takes no room in the binder.<br>
+  The temp never touches the systems directly: the company's tools (the harness) do every action and report back. Anything worth keeping has to go in the binder or the shared drive, because the temp will not be back.
+</div>
+
+<script type="module">
+import ForceGraph3D from "https://esm.sh/3d-force-graph@1.77.0?deps=three@0.180.0";
+import * as THREE from "https://esm.sh/three@0.180.0";
+
+const SNAPSHOT = [{"previous":{"generatedAt":"2026-10-25T09:00:00.000Z","firstTurnTokens":38900,"nodes":{"settings:user":{"tokens":0,"label":"settings.json","kind":"settings"},"claudemd:user":{"tokens":620,"label":"CLAUDE.md","kind":"claude_md"},"memory:index":{"tokens":410,"label":"MEMORY.md","kind":"memory_index"},"memory:files":{"tokens":4100,"label":"unlinked memory files (9)","kind":"memory_files"},"memory:file:hub_release.md":{"tokens":300,"label":"hub_release.md","kind":"memory_file"},"memory:file:deploy_checklist.md":{"tokens":1100,"label":"deploy_checklist.md","kind":"memory_file"},"memory:file:release_process.md":{"tokens":720,"label":"release_process.md","kind":"memory_file"},"memory:file:flaky_tests.md":{"tokens":640,"label":"flaky_tests.md","kind":"memory_file"},"memory:file:hub_api.md":{"tokens":260,"label":"hub_api.md","kind":"memory_file"},"memory:file:api_error_codes.md":{"tokens":860,"label":"api_error_codes.md","kind":"memory_file"},"memory:file:customer_tiers.md":{"tokens":480,"label":"customer_tiers.md","kind":"memory_file"},"memory:file:style_decisions.md":{"tokens":420,"label":"style_decisions.md","kind":"memory_file"},"memory:file:oncall_notes.md":{"tokens":380,"label":"oncall_notes.md","kind":"memory_file"},"hook:user:pre":{"tokens":0,"label":"PreToolUse [Bash]: guard.sh","kind":"hook"},"plugin:frontend-design":{"tokens":0,"label":"frontend-design","kind":"plugin"},"skill:frontend-design:frontend-design":{"tokens":3150,"label":"frontend-design:frontend-design","kind":"skill"},"plugin:playwright":{"tokens":0,"label":"playwright","kind":"plugin"},"plugin:docs-helper":{"tokens":0,"label":"docs-helper","kind":"plugin"},"skill:docs-helper:write-docs":{"tokens":2700,"label":"docs-helper:write-docs","kind":"skill"},"skill:docs-helper:release-notes":{"tokens":2970,"label":"docs-helper:release-notes","kind":"skill"},"skill:user:tdd":{"tokens":2400,"label":"test-driven-development","kind":"skill"},"settings:project":{"tokens":0,"label":"settings.json","kind":"settings"},"claudemd:project":{"tokens":2100,"label":"CLAUDE.md","kind":"claude_md"},"rule:api.md":{"tokens":700,"label":"api.md","kind":"rule"},"rule:style.md":{"tokens":260,"label":"style.md","kind":"rule"},"command:ship":{"tokens":450,"label":"ship","kind":"command"},"command:review":{"tokens":450,"label":"review","kind":"command"},"agent:reviewer":{"tokens":380,"label":"reviewer","kind":"agent"},"import:conventions":{"tokens":640,"label":"conventions.md","kind":"claude_md"},"hook:project:post":{"tokens":0,"label":"PostToolUse [Edit|Write]: lint.sh","kind":"hook"},"mcp:postgres":{"tokens":0,"label":"postgres","kind":"mcp_server"},"settings:local":{"tokens":0,"label":"settings.local.json","kind":"settings"},"session:skill_listing":{"tokens":2600,"label":"skill listing (18)","kind":"skill_listing"},"session:output_style":{"tokens":330,"label":"output style: Concise","kind":"output_style"},"tools:postgres":{"tokens":248,"label":"postgres tools (9)","kind":"tool_group"},"tools:github":{"tokens":1333,"label":"github tools (41)","kind":"tool_group"},"mcp:github":{"tokens":0,"label":"github","kind":"mcp_server"},"tools:slack":{"tokens":540,"label":"slack tools (18)","kind":"tool_group"},"mcp:slack":{"tokens":0,"label":"slack","kind":"mcp_server"},"tools:playwright":{"tokens":600,"label":"playwright tools (24)","kind":"tool_group"},"mcp:playwright":{"tokens":0,"label":"playwright","kind":"mcp_server"},"tools:built-in":{"tokens":560,"label":"built-in tools (14)","kind":"tool_group"},"mcpinstr:github":{"tokens":610,"label":"github instructions","kind":"mcp_instructions"},"mcpinstr:playwright":{"tokens":380,"label":"playwright instructions","kind":"mcp_instructions"},"harness":{"tokens":28479,"label":"harness (system prompt, tool schemas)","kind":"harness"},"rule:legacy.md":{"tokens":900,"label":"legacy.md","kind":"rule"}}},"version":1,"harness":{"id":"claude-code","name":"Claude Code"},"generatedAt":"2026-11-01T09:00:00.000Z","project":"~/dev/acme-shop (demo data)","platform":"linux","session":{"transcript":"demo","firstTurnTokens":41200,"model":"demo","turns":[[3,41197,0],[3,800,41197],[3,5588,41997],[3,2304,47585],[3,1895,49889],[3,4593,51784],[3,3570,56377],[3,2512,59947],[3,4711,62459],[3,4726,67170],[3,3623,71896],[3,4359,75519],[3,4107,79878],[3,5047,83985],[3,2058,89032],[3,2746,91090],[3,4481,93836],[3,4430,98317],[3,1080,102747],[3,4356,103827],[3,3233,108183],[3,5596,111416],[3,4999,117012],[3,1439,122011],[3,3468,123450],[3,5600,126918],[3,4380,132518],[3,4148,50197],[3,3803,54345],[3,5542,58148],[3,5523,63690],[3,2736,69213],[3,2544,71949],[3,5153,74493],[3,2528,79646],[3,1593,82174],[3,2348,83767],[3,3028,86115],[3,2333,89143],[3,5674,91476]],"notes":["Synthetic demo data"]},"totals":{"byLoad":{"always":37149,"on_demand":22980,"deferred":4051},"nodes":49},"nodes":[{"tokens":0,"detail":{"allowRules":12,"denyRules":2},"id":"settings:user","label":"settings.json","kind":"settings","scope":"user","load":"config","source":"~/.claude/settings.json"},{"tokens":620,"detail":{"confirmedInSession":true},"id":"claudemd:user","label":"CLAUDE.md","kind":"claude_md","scope":"user","load":"always","source":"~/.claude/CLAUDE.md","outline":[{"level":1,"title":"Preferences","tokens":20},{"level":2,"title":"Response style","tokens":310},{"level":2,"title":"Commits","tokens":290}]},{"tokens":410,"detail":{},"id":"memory:index","label":"MEMORY.md","kind":"memory_index","scope":"user","load":"always","source":"~/.claude/projects/-home-dev-acme-shop/memory/MEMORY.md"},{"tokens":4100,"detail":{"count":9},"id":"memory:files","label":"unlinked memory files (9)","kind":"memory_files","scope":"user","load":"on_demand","source":"~/.claude/projects/-home-dev-acme-shop/memory","files":[{"name":"db_migrations.md","tokens":590},{"name":"old_vendor_notes.md","tokens":540},{"name":"q3_retro.md","tokens":510},{"name":"perf_baseline.md","tokens":470}]},{"tokens":300,"detail":{},"id":"memory:file:hub_release.md","label":"hub_release.md","kind":"memory_file","scope":"user","load":"on_demand","source":"~/.claude/projects/-home-dev-acme-shop/memory/hub_release.md","parent":"memory:index"},{"tokens":1100,"detail":{},"id":"memory:file:deploy_checklist.md","label":"deploy_checklist.md","kind":"memory_file","scope":"user","load":"on_demand","source":"~/.claude/projects/-home-dev-acme-shop/memory/deploy_checklist.md","parent":"memory:file:hub_release.md"},{"tokens":720,"detail":{},"id":"memory:file:release_process.md","label":"release_process.md","kind":"memory_file","scope":"user","load":"on_demand","source":"~/.claude/projects/-home-dev-acme-shop/memory/release_process.md","parent":"memory:file:hub_release.md"},{"tokens":640,"detail":{},"id":"memory:file:flaky_tests.md","label":"flaky_tests.md","kind":"memory_file","scope":"user","load":"on_demand","source":"~/.claude/projects/-home-dev-acme-shop/memory/flaky_tests.md","parent":"memory:file:hub_release.md"},{"tokens":260,"detail":{},"id":"memory:file:hub_api.md","label":"hub_api.md","kind":"memory_file","scope":"user","load":"on_demand","source":"~/.claude/projects/-home-dev-acme-shop/memory/hub_api.md","parent":"memory:index"},{"tokens":860,"detail":{},"id":"memory:file:api_error_codes.md","label":"api_error_codes.md","kind":"memory_file","scope":"user","load":"on_demand","source":"~/.claude/projects/-home-dev-acme-shop/memory/api_error_codes.md","parent":"memory:file:hub_api.md"},{"tokens":480,"detail":{},"id":"memory:file:customer_tiers.md","label":"customer_tiers.md","kind":"memory_file","scope":"user","load":"on_demand","source":"~/.claude/projects/-home-dev-acme-shop/memory/customer_tiers.md","parent":"memory:file:hub_api.md"},{"tokens":420,"detail":{},"id":"memory:file:style_decisions.md","label":"style_decisions.md","kind":"memory_file","scope":"user","load":"on_demand","source":"~/.claude/projects/-home-dev-acme-shop/memory/style_decisions.md","parent":"memory:index"},{"tokens":380,"detail":{},"id":"memory:file:oncall_notes.md","label":"oncall_notes.md","kind":"memory_file","scope":"user","load":"on_demand","source":"~/.claude/projects/-home-dev-acme-shop/memory/oncall_notes.md","parent":"memory:index"},{"tokens":0,"detail":{"event":"PreToolUse","matcher":"Bash"},"id":"hook:user:pre","label":"PreToolUse [Bash]: guard.sh","kind":"hook","scope":"user","load":"runtime","source":"~/.claude/settings.json"},{"tokens":0,"detail":{"version":"1.0.0"},"id":"plugin:frontend-design","label":"frontend-design","kind":"plugin","scope":"user","load":"config","source":"~/.claude/settings.json"},{"tokens":3150,"detail":{},"id":"skill:frontend-design:frontend-design","label":"frontend-design:frontend-design","kind":"skill","scope":"user","load":"on_demand","source":"~/.claude/plugins/cache/frontend-design/skills/frontend-design/SKILL.md"},{"tokens":0,"detail":{"version":"1.0.0"},"id":"plugin:playwright","label":"playwright","kind":"plugin","scope":"user","load":"config","source":"~/.claude/settings.json"},{"tokens":0,"detail":{"version":"1.0.0"},"id":"plugin:docs-helper","label":"docs-helper","kind":"plugin","scope":"user","load":"config","source":"~/.claude/settings.json"},{"tokens":2700,"detail":{},"id":"skill:docs-helper:write-docs","label":"docs-helper:write-docs","kind":"skill","scope":"user","load":"on_demand","source":"~/.claude/plugins/cache/docs-helper/skills/write-docs/SKILL.md"},{"tokens":2970,"detail":{},"id":"skill:docs-helper:release-notes","label":"docs-helper:release-notes","kind":"skill","scope":"user","load":"on_demand","source":"~/.claude/plugins/cache/docs-helper/skills/release-notes/SKILL.md"},{"tokens":2400,"detail":{},"id":"skill:user:tdd","label":"test-driven-development","kind":"skill","scope":"user","load":"on_demand","source":"~/.claude/skills/test-driven-development/SKILL.md","outline":[{"level":0,"title":"(frontmatter)","tokens":60},{"level":1,"title":"Test-driven development","tokens":120},{"level":2,"title":"When to use","tokens":400},{"level":2,"title":"Red, green, refactor","tokens":1100},{"level":2,"title":"Common mistakes","tokens":720}]},{"tokens":0,"detail":{},"id":"settings:project","label":"settings.json","kind":"settings","scope":"project","load":"config","source":"~/dev/acme-shop/.claude/settings.json"},{"tokens":2900,"detail":{"confirmedInSession":true},"id":"claudemd:project","label":"CLAUDE.md","kind":"claude_md","scope":"project","load":"always","source":"~/dev/acme-shop/CLAUDE.md","outline":[{"level":1,"title":"acme-shop","tokens":40},{"level":2,"title":"Setup","tokens":380},{"level":2,"title":"Architecture","tokens":720},{"level":3,"title":"API layer","tokens":410},{"level":3,"title":"Storefront","tokens":290},{"level":2,"title":"Testing","tokens":560},{"level":2,"title":"Git conventions","tokens":240},{"level":2,"title":"Deploy","tokens":260}]},{"tokens":700,"detail":{"pathScoped":true},"id":"rule:api.md","label":"api.md","kind":"rule","scope":"project","load":"on_demand","source":"~/dev/acme-shop/.claude/rules/api.md"},{"tokens":520,"detail":{"pathScoped":true},"id":"rule:frontend.md","label":"frontend.md","kind":"rule","scope":"project","load":"on_demand","source":"~/dev/acme-shop/.claude/rules/frontend.md"},{"tokens":260,"detail":{"pathScoped":false},"id":"rule:style.md","label":"style.md","kind":"rule","scope":"project","load":"always","source":"~/dev/acme-shop/.claude/rules/style.md"},{"tokens":450,"detail":{},"id":"command:ship","label":"ship","kind":"command","scope":"project","load":"on_demand","source":"~/dev/acme-shop/.claude/commands/ship.md"},{"tokens":450,"detail":{},"id":"command:review","label":"review","kind":"command","scope":"project","load":"on_demand","source":"~/dev/acme-shop/.claude/commands/review.md"},{"tokens":380,"detail":{},"id":"agent:reviewer","label":"reviewer","kind":"agent","scope":"project","load":"on_demand","source":"~/dev/acme-shop/.claude/agents/reviewer.md"},{"tokens":640,"detail":{"where":"imported by CLAUDE.md"},"id":"import:conventions","label":"conventions.md","kind":"claude_md","scope":"project","load":"always","source":"~/dev/acme-shop/docs/conventions.md"},{"tokens":0,"detail":{"event":"PostToolUse","matcher":"Edit|Write"},"id":"hook:project:post","label":"PostToolUse [Edit|Write]: lint.sh","kind":"hook","scope":"project","load":"runtime","source":"~/dev/acme-shop/.claude/settings.json"},{"tokens":0,"detail":{"transport":"stdio"},"id":"mcp:postgres","label":"postgres","kind":"mcp_server","scope":"project","load":"config","source":"~/dev/acme-shop/.mcp.json"},{"tokens":0,"detail":{"outputStyle":"Concise"},"id":"settings:local","label":"settings.local.json","kind":"settings","scope":"local","load":"config","source":"~/dev/acme-shop/.claude/settings.local.json"},{"tokens":0,"detail":{"transport":"http"},"id":"mcp:sentry","label":"sentry","kind":"mcp_server","scope":"local","load":"config","source":"~/.claude.json"},{"tokens":2100,"detail":{"count":18},"id":"session:skill_listing","label":"skill listing (18)","kind":"skill_listing","scope":"session","load":"always","source":"transcript"},{"tokens":330,"detail":{},"id":"session:output_style","label":"output style: Concise","kind":"output_style","scope":"session","load":"always","source":"transcript"},{"tokens":248,"detail":{"count":9},"id":"tools:postgres","label":"postgres tools (9)","kind":"tool_group","scope":"session","load":"deferred","source":"transcript"},{"tokens":770,"detail":{"count":22},"id":"tools:sentry","label":"sentry tools (22)","kind":"tool_group","scope":"session","load":"deferred","source":"transcript"},{"tokens":1333,"detail":{"count":41},"id":"tools:github","label":"github tools (41)","kind":"tool_group","scope":"session","load":"deferred","source":"transcript"},{"tokens":0,"detail":{"origin":"connector or plugin, not in config files"},"id":"mcp:github","label":"github","kind":"mcp_server","scope":"session","load":"config","source":"transcript"},{"tokens":540,"detail":{"count":18},"id":"tools:slack","label":"slack tools (18)","kind":"tool_group","scope":"session","load":"deferred","source":"transcript"},{"tokens":0,"detail":{"origin":"connector or plugin, not in config files","status":"needs auth"},"id":"mcp:slack","label":"slack","kind":"mcp_server","scope":"session","load":"config","source":"transcript"},{"tokens":600,"detail":{"count":24},"id":"tools:playwright","label":"playwright tools (24)","kind":"tool_group","scope":"session","load":"deferred","source":"transcript"},{"tokens":0,"detail":{"origin":"connector or plugin, not in config files"},"id":"mcp:playwright","label":"playwright","kind":"mcp_server","scope":"session","load":"config","source":"transcript"},{"tokens":560,"detail":{"count":14},"id":"tools:built-in","label":"built-in tools (14)","kind":"tool_group","scope":"session","load":"deferred","source":"transcript"},{"tokens":420,"detail":{},"id":"mcpinstr:sentry","label":"sentry instructions","kind":"mcp_instructions","scope":"session","load":"always","source":"transcript"},{"tokens":610,"detail":{},"id":"mcpinstr:github","label":"github instructions","kind":"mcp_instructions","scope":"session","load":"always","source":"transcript"},{"tokens":380,"detail":{},"id":"mcpinstr:playwright","label":"playwright instructions","kind":"mcp_instructions","scope":"session","load":"always","source":"transcript"},{"tokens":28479,"detail":{"note":"First-turn total minus everything this map can attribute"},"id":"harness","label":"harness (system prompt, tool schemas)","kind":"harness","scope":"session","load":"always","source":"Claude Code"}],"edges":[{"from":"memory:index","to":"memory:files","kind":"indexes"},{"from":"memory:index","to":"memory:file:hub_release.md","kind":"links to"},{"from":"memory:file:hub_release.md","to":"memory:file:deploy_checklist.md","kind":"links to"},{"from":"memory:file:hub_release.md","to":"memory:file:release_process.md","kind":"links to"},{"from":"memory:file:hub_release.md","to":"memory:file:flaky_tests.md","kind":"links to"},{"from":"memory:index","to":"memory:file:hub_api.md","kind":"links to"},{"from":"memory:file:hub_api.md","to":"memory:file:api_error_codes.md","kind":"links to"},{"from":"memory:file:hub_api.md","to":"memory:file:customer_tiers.md","kind":"links to"},{"from":"memory:index","to":"memory:file:style_decisions.md","kind":"links to"},{"from":"memory:index","to":"memory:file:oncall_notes.md","kind":"links to"},{"from":"settings:user","to":"hook:user:pre","kind":"registers"},{"from":"settings:user","to":"plugin:frontend-design","kind":"enables"},{"from":"plugin:frontend-design","to":"skill:frontend-design:frontend-design","kind":"provides"},{"from":"settings:user","to":"plugin:playwright","kind":"enables"},{"from":"settings:user","to":"plugin:docs-helper","kind":"enables"},{"from":"plugin:docs-helper","to":"skill:docs-helper:write-docs","kind":"provides"},{"from":"plugin:docs-helper","to":"skill:docs-helper:release-notes","kind":"provides"},{"from":"claudemd:project","to":"import:conventions","kind":"imports"},{"from":"claudemd:project","to":"rule:api.md","kind":"mentions"},{"from":"claudemd:project","to":"command:ship","kind":"mentions"},{"from":"command:ship","to":"agent:reviewer","kind":"mentions"},{"from":"rule:frontend.md","to":"rule:style.md","kind":"links to"},{"from":"settings:project","to":"hook:project:post","kind":"registers"},{"from":"mcp:postgres","to":"tools:postgres","kind":"exposes"},{"from":"mcp:sentry","to":"tools:sentry","kind":"exposes"},{"from":"mcp:github","to":"tools:github","kind":"exposes"},{"from":"mcp:slack","to":"tools:slack","kind":"exposes"},{"from":"mcp:playwright","to":"tools:playwright","kind":"exposes"},{"from":"mcp:sentry","to":"mcpinstr:sentry","kind":"injects"},{"from":"mcp:github","to":"mcpinstr:github","kind":"injects"},{"from":"mcp:playwright","to":"mcpinstr:playwright","kind":"injects"},{"from":"plugin:playwright","to":"mcp:playwright","kind":"provides"}]},{"version":1,"harness":{"id":"codex","name":"Codex"},"generatedAt":"2026-11-01T09:00:00.000Z","project":"~/dev/acme-shop (demo data)","platform":"linux","session":{"transcript":"demo","firstTurnTokens":21400,"model":"gpt-demo","notes":["Synthetic demo data"],"firstTurnUsage":{"uncached":8600,"cacheWrite":0,"cacheRead":12800},"contextWindow":258400,"contextWindowFrom":"session rollout","attribution":{"recorded":21400,"attributed":10164,"unattributed":11236},"startedAt":"2026-11-01T08:40:00.000Z"},"totals":{"byLoad":{"config":0,"runtime":0,"always":21400,"on_demand":3799},"nodes":64},"nodes":[{"tokens":0,"detail":{"model":"gpt-demo","reasoningEffort":"medium","mcpServers":5,"affects":["Picks the model: gpt-demo","Reasoning effort: medium","Connects 5 MCP servers","Trusts 1 project folder, so their own config loads"]},"id":"settings:user:config.toml","label":"config.toml","kind":"settings","scope":"user","load":"config","source":"~/.codex/config.toml"},{"tokens":0,"detail":{"transport":"http","runs":"remote","runsWhy":"HTTP server on another host (set in config.toml)"},"id":"mcp:github","label":"github","kind":"mcp_server","scope":"user","load":"config","source":"~/.codex/config.toml"},{"tokens":0,"detail":{"transport":"stdio","runs":"local","runsWhy":"stdio process on your machine (set in config.toml)"},"id":"mcp:postgres","label":"postgres","kind":"mcp_server","scope":"user","load":"config","source":"~/.codex/config.toml"},{"tokens":0,"detail":{"transport":"stdio","runs":"local","runsWhy":"stdio process on your machine (set in config.toml)"},"id":"mcp:browser","label":"browser","kind":"mcp_server","scope":"user","load":"config","source":"~/.codex/config.toml"},{"tokens":0,"detail":{"transport":"stdio","runs":"remote","runsWhy":"local command that proxies to a remote server (set in config.toml)"},"id":"mcp:tracing","label":"tracing","kind":"mcp_server","scope":"user","load":"config","source":"~/.codex/config.toml"},{"tokens":0,"detail":{"transport":"stdio","runs":"local","runsWhy":"stdio process on your machine (set in config.toml)","status":"disabled"},"id":"mcp:old-search","label":"old-search","kind":"mcp_server","scope":"user","load":"config","source":"~/.codex/config.toml"},{"tokens":0,"detail":{"marketplace":"market"},"id":"plugin:design-kit@market","label":"design-kit","kind":"plugin","scope":"user","load":"config","source":"~/.codex/config.toml"},{"tokens":0,"detail":{"marketplace":"market"},"id":"plugin:data-tools@market","label":"data-tools","kind":"plugin","scope":"user","load":"config","source":"~/.codex/config.toml"},{"tokens":0,"detail":{"marketplace":"market"},"id":"plugin:docs-helper@market","label":"docs-helper","kind":"plugin","scope":"user","load":"config","source":"~/.codex/config.toml"},{"tokens":0,"detail":{"marketplace":"market"},"id":"plugin:release-bot@market","label":"release-bot","kind":"plugin","scope":"user","load":"config","source":"~/.codex/config.toml"},{"tokens":0,"detail":{"events":["PreToolUse","Stop"],"affects":["Runs hooks on PreToolUse, Stop"]},"id":"settings:user:hooks.json","label":"hooks.json","kind":"settings","scope":"user","load":"config","source":"~/.codex/hooks.json"},{"tokens":0,"detail":{"event":"PreToolUse","matcher":"Bash","type":"command"},"id":"hook:user:PreToolUse:0:0","label":"PreToolUse [Bash]: guard.sh","kind":"hook","scope":"user","load":"runtime","source":"~/.codex/hooks.json"},{"tokens":0,"detail":{"event":"Stop","matcher":"*","type":"command"},"id":"hook:user:Stop:0:0","label":"Stop: notify.sh","kind":"hook","scope":"user","load":"runtime","source":"~/.codex/hooks.json"},{"tokens":0,"detail":{"events":["PostToolUse"],"affects":["Runs hooks on PostToolUse"]},"id":"settings:project:hooks.json","label":"hooks.json","kind":"settings","scope":"project","load":"config","source":".codex/hooks.json"},{"tokens":0,"detail":{"event":"PostToolUse","matcher":"Edit","type":"command"},"id":"hook:project:PostToolUse:0:0","label":"PostToolUse [Edit]: lint.sh","kind":"hook","scope":"project","load":"runtime","source":".codex/hooks.json"},{"tokens":435,"detail":{"confirmedInSession":true},"id":"agentsmd:~/.codex/AGENTS.md","label":"AGENTS.md","kind":"agents_md","scope":"user","load":"always","source":"~/.codex/AGENTS.md","outline":[{"level":1,"title":"Personal","tokens":3},{"level":2,"title":"Style","tokens":288},{"level":2,"title":"Git","tokens":145}]},{"tokens":1294,"detail":{"confirmedInSession":true},"id":"agentsmd:~/dev/acme-shop/AGENTS.md","label":"AGENTS.md","kind":"agents_md","scope":"project","load":"always","source":"AGENTS.md","outline":[{"level":1,"title":"Acme shop","tokens":3},{"level":2,"title":"Setup","tokens":430},{"level":2,"title":"Testing","tokens":573},{"level":2,"title":"Deploy","tokens":288}]},{"tokens":584,"detail":{"from":"~/.agents/skills"},"id":"skill:user:changelog","label":"changelog","kind":"skill","scope":"user","load":"on_demand","source":"~/.agents/skills/changelog/SKILL.md","outline":[{"level":0,"title":"(frontmatter)","tokens":14},{"level":0,"title":"(before first heading)","tokens":570}]},{"tokens":584,"detail":{"from":"~/.agents/skills"},"id":"skill:user:pr-review","label":"pr-review","kind":"skill","scope":"user","load":"on_demand","source":"~/.agents/skills/pr-review/SKILL.md","outline":[{"level":0,"title":"(frontmatter)","tokens":14},{"level":0,"title":"(before first heading)","tokens":570}]},{"tokens":586,"detail":{"from":"~/.agents/skills"},"id":"skill:user:release-notes","label":"release-notes","kind":"skill","scope":"user","load":"on_demand","source":"~/.agents/skills/release-notes/SKILL.md","outline":[{"level":0,"title":"(frontmatter)","tokens":16},{"level":0,"title":"(before first heading)","tokens":570}]},{"tokens":584,"detail":{"from":"~/.agents/skills"},"id":"skill:user:screenshot","label":"screenshot","kind":"skill","scope":"user","load":"on_demand","source":"~/.agents/skills/screenshot/SKILL.md","outline":[{"level":0,"title":"(frontmatter)","tokens":14},{"level":0,"title":"(before first heading)","tokens":570}]},{"tokens":582,"detail":{"from":"~/.agents/skills"},"id":"skill:user:triage","label":"triage","kind":"skill","scope":"user","load":"on_demand","source":"~/.agents/skills/triage/SKILL.md","outline":[{"level":0,"title":"(frontmatter)","tokens":12},{"level":0,"title":"(before first heading)","tokens":570}]},{"tokens":440,"detail":{"from":".agents/skills in the repo"},"id":"skill:project:db-migrate","label":"db-migrate","kind":"skill","scope":"project","load":"on_demand","source":".agents/skills/db-migrate/SKILL.md","outline":[{"level":0,"title":"(frontmatter)","tokens":12},{"level":0,"title":"(before first heading)","tokens":428}]},{"tokens":439,"detail":{"from":".agents/skills in the repo"},"id":"skill:project:seed-data","label":"seed-data","kind":"skill","scope":"project","load":"on_demand","source":".agents/skills/seed-data/SKILL.md","outline":[{"level":0,"title":"(frontmatter)","tokens":12},{"level":0,"title":"(before first heading)","tokens":428}]},{"tokens":5415,"detail":{"note":"Codex's base instructions, recorded at session start"},"id":"harness:base","label":"system prompt","kind":"harness","scope":"session","load":"always","source":"the last session's log"},{"tokens":2055,"detail":{"count":33,"note":"Name and description of every skill, sent every session"},"id":"session:skill_listing","label":"skill listing (33)","kind":"skill_listing","scope":"session","load":"always","source":"the last session's log"},{"tokens":54,"detail":{"from":"~/.agents/skills"},"id":"skill_entry:~/.agents/skills:release-notes","label":"release-notes","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":52,"detail":{"from":"~/.agents/skills"},"id":"skill_entry:~/.agents/skills:pr-review","label":"pr-review","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":52,"detail":{"from":"~/.agents/skills"},"id":"skill_entry:~/.agents/skills:changelog","label":"changelog","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":50,"detail":{"from":"~/.agents/skills"},"id":"skill_entry:~/.agents/skills:triage","label":"triage","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":52,"detail":{"from":"~/.agents/skills"},"id":"skill_entry:~/.agents/skills:screenshot","label":"screenshot","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":51,"detail":{"from":"built into Codex"},"id":"skill_entry:built into Codex:imagegen","label":"imagegen","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":54,"detail":{"from":"built into Codex"},"id":"skill_entry:built into Codex:skill-creator","label":"skill-creator","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":53,"detail":{"from":"built into Codex"},"id":"skill_entry:built into Codex:openai-docs","label":"openai-docs","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin design-kit"},"id":"skill_entry:plugin design-kit:design-kit:skill-0","label":"design-kit:skill-0","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin design-kit"},"id":"skill_entry:plugin design-kit:design-kit:skill-1","label":"design-kit:skill-1","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin design-kit"},"id":"skill_entry:plugin design-kit:design-kit:skill-2","label":"design-kit:skill-2","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin design-kit"},"id":"skill_entry:plugin design-kit:design-kit:skill-3","label":"design-kit:skill-3","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin design-kit"},"id":"skill_entry:plugin design-kit:design-kit:skill-4","label":"design-kit:skill-4","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin design-kit"},"id":"skill_entry:plugin design-kit:design-kit:skill-5","label":"design-kit:skill-5","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin design-kit"},"id":"skill_entry:plugin design-kit:design-kit:skill-6","label":"design-kit:skill-6","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin design-kit"},"id":"skill_entry:plugin design-kit:design-kit:skill-7","label":"design-kit:skill-7","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin design-kit"},"id":"skill_entry:plugin design-kit:design-kit:skill-8","label":"design-kit:skill-8","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin design-kit"},"id":"skill_entry:plugin design-kit:design-kit:skill-9","label":"design-kit:skill-9","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":57,"detail":{"from":"plugin design-kit"},"id":"skill_entry:plugin design-kit:design-kit:skill-10","label":"design-kit:skill-10","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":57,"detail":{"from":"plugin design-kit"},"id":"skill_entry:plugin design-kit:design-kit:skill-11","label":"design-kit:skill-11","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":57,"detail":{"from":"plugin design-kit"},"id":"skill_entry:plugin design-kit:design-kit:skill-12","label":"design-kit:skill-12","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":57,"detail":{"from":"plugin design-kit"},"id":"skill_entry:plugin design-kit:design-kit:skill-13","label":"design-kit:skill-13","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin data-tools"},"id":"skill_entry:plugin data-tools:data-tools:skill-0","label":"data-tools:skill-0","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin data-tools"},"id":"skill_entry:plugin data-tools:data-tools:skill-1","label":"data-tools:skill-1","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin data-tools"},"id":"skill_entry:plugin data-tools:data-tools:skill-2","label":"data-tools:skill-2","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin data-tools"},"id":"skill_entry:plugin data-tools:data-tools:skill-3","label":"data-tools:skill-3","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin data-tools"},"id":"skill_entry:plugin data-tools:data-tools:skill-4","label":"data-tools:skill-4","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin data-tools"},"id":"skill_entry:plugin data-tools:data-tools:skill-5","label":"data-tools:skill-5","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin data-tools"},"id":"skill_entry:plugin data-tools:data-tools:skill-6","label":"data-tools:skill-6","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin data-tools"},"id":"skill_entry:plugin data-tools:data-tools:skill-7","label":"data-tools:skill-7","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":56,"detail":{"from":"plugin data-tools"},"id":"skill_entry:plugin data-tools:data-tools:skill-8","label":"data-tools:skill-8","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":52,"detail":{"from":"repo"},"id":"skill_entry:repo:db-migrate","label":"db-migrate","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":52,"detail":{"from":"repo"},"id":"skill_entry:repo:seed-data","label":"seed-data","kind":"skill_entry","scope":"session","load":"always","source":"the last session's log"},{"tokens":85,"detail":{"role":"developer","note":"Added by Codex before your first prompt"},"id":"harness:permissions_instructions","label":"permissions instructions","kind":"harness_block","scope":"session","load":"always","source":"the last session's log"},{"tokens":267,"detail":{"role":"developer","note":"Added by Codex before your first prompt"},"id":"harness:collaboration_mode","label":"collaboration mode","kind":"harness_block","scope":"session","load":"always","source":"the last session's log"},{"tokens":579,"detail":{"role":"developer","note":"Added by Codex before your first prompt"},"id":"harness:multi_agent_role","label":"multi agent role","kind":"harness_block","scope":"session","load":"always","source":"the last session's log"},{"tokens":34,"detail":{"role":"user","note":"Added by Codex before your first prompt"},"id":"harness:environment_context","label":"environment context","kind":"harness_block","scope":"session","load":"always","source":"the last session's log"},{"tokens":11236,"detail":{"note":"Not measured directly: the recorded first-turn total minus every piece this map can size","unattributed":true},"id":"harness","label":"harness (tool schemas, wrappers)","kind":"harness","scope":"session","load":"always","source":"Codex"}],"edges":[{"from":"settings:user:config.toml","to":"mcp:github","kind":"configures"},{"from":"settings:user:config.toml","to":"mcp:postgres","kind":"configures"},{"from":"settings:user:config.toml","to":"mcp:browser","kind":"configures"},{"from":"settings:user:config.toml","to":"mcp:tracing","kind":"configures"},{"from":"settings:user:config.toml","to":"mcp:old-search","kind":"configures"},{"from":"settings:user:config.toml","to":"plugin:design-kit@market","kind":"enables"},{"from":"settings:user:config.toml","to":"plugin:data-tools@market","kind":"enables"},{"from":"settings:user:config.toml","to":"plugin:docs-helper@market","kind":"enables"},{"from":"settings:user:config.toml","to":"plugin:release-bot@market","kind":"enables"},{"from":"settings:user:hooks.json","to":"hook:user:PreToolUse:0:0","kind":"registers"},{"from":"settings:user:hooks.json","to":"hook:user:Stop:0:0","kind":"registers"},{"from":"settings:project:hooks.json","to":"hook:project:PostToolUse:0:0","kind":"registers"},{"from":"session:skill_listing","to":"skill_entry:~/.agents/skills:release-notes","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:~/.agents/skills:pr-review","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:~/.agents/skills:changelog","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:~/.agents/skills:triage","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:~/.agents/skills:screenshot","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:built into Codex:imagegen","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:built into Codex:skill-creator","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:built into Codex:openai-docs","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin design-kit:design-kit:skill-0","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin design-kit:design-kit:skill-1","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin design-kit:design-kit:skill-2","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin design-kit:design-kit:skill-3","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin design-kit:design-kit:skill-4","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin design-kit:design-kit:skill-5","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin design-kit:design-kit:skill-6","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin design-kit:design-kit:skill-7","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin design-kit:design-kit:skill-8","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin design-kit:design-kit:skill-9","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin design-kit:design-kit:skill-10","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin design-kit:design-kit:skill-11","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin design-kit:design-kit:skill-12","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin design-kit:design-kit:skill-13","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin data-tools:data-tools:skill-0","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin data-tools:data-tools:skill-1","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin data-tools:data-tools:skill-2","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin data-tools:data-tools:skill-3","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin data-tools:data-tools:skill-4","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin data-tools:data-tools:skill-5","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin data-tools:data-tools:skill-6","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin data-tools:data-tools:skill-7","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:plugin data-tools:data-tools:skill-8","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:repo:db-migrate","kind":"lists"},{"from":"session:skill_listing","to":"skill_entry:repo:seed-data","kind":"lists"}]}];
+// Set only when --serve hands out the page: the key its Rescan button sends back.
+const SERVE = /*__SERVE__*/null;
+const LOADED = SNAPSHOT || await fetch("snapshot.json").then((r) => r.json());
+// A page can hold several harnesses (Claude Code, Codex). ?harness=<id> picks one; the first is the default.
+const ALL = (Array.isArray(LOADED) ? LOADED : [LOADED]).filter((s) => s && Array.isArray(s.nodes));
+// ?project=<folder>&harness=<id> pick one; a project keeps the harness you were on when it has it.
+const Q = new URLSearchParams(location.search);
+const PROJECTS = [...new Set(ALL.map((s) => s.project))];
+const inProject = ALL.filter((s) => s.project === (PROJECTS.includes(Q.get("project")) ? Q.get("project") : PROJECTS[0]));
+const data = inProject.find((s) => s.harness?.id === Q.get("harness")) || inProject[0];
+// Text that names the harness, so one viewer serves every adapter. Unknown harnesses fall back to Claude Code's.
+const HARNESS_TEXT = {
+  "claude-code": { name: "Claude Code", home: "~/.claude", projectDir: "the repo, plus its private memory", instructions: "CLAUDE.md, rules, memory index", instrNote: "your CLAUDE.md files, rules and memory index", floors: "managed (organization policy), user, project, local, session" },
+  codex: { name: "Codex", home: "~/.codex", projectDir: ".codex/ and AGENTS.md in the repo", instructions: "AGENTS.md", instrNote: "your AGENTS.md files", floors: "user, project, session" },
+};
+// Snapshots from before harness ids existed are all Claude Code.
+const HT = HARNESS_TEXT[data.harness?.id || "claude-code"] || { ...HARNESS_TEXT["claude-code"], name: String(data.harness?.name || "the harness") };
+document.title = `${HT.name} Harness Map`;
+document.querySelector("h1").textContent = `${HT.name} Harness Map`;
+// Several harnesses in one page: a dropdown in the title row picks which one the whole page shows.
+// Title row: the map's name, then which project folder it maps and, when the page holds several, which harness.
+{
+  const h1 = document.querySelector("h1");
+  const row = document.createElement("div");
+  row.id = "title-row";
+  h1.replaceWith(row);
+  const picks = document.createElement("div");
+  picks.id = "picks";
+  const go = (params) => { const u = new URL(location.href); for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v); u.hash = ""; location.href = u.toString(); };
+  // With --serve the project name is a button that opens the folder picker; the static file uses a plain list.
+  const asList = PROJECTS.length > 1 && !SERVE?.token;
+  const proj = document.createElement(asList ? "label" : "span");
+  proj.id = "project-pick";
+  proj.title = `Mapped project folder: ${data.project}. Add more with --project <dir>, once per folder.`;
+  proj.append("Project ");
+  if (asList) {
+    const ps = document.createElement("select");
+    ps.setAttribute("aria-label", "Which project to show");
+    for (const p of PROJECTS) { const o = document.createElement("option"); o.value = p; o.textContent = p; o.selected = p === data.project; ps.appendChild(o); }
+    ps.addEventListener("change", () => go({ project: ps.value, harness: data.harness?.id || "" }));
+    proj.append(ps);
+  } else if (SERVE?.token) {
+    const pb = document.createElement("button");
+    pb.type = "button"; pb.id = "project-btn";
+    pb.setAttribute("aria-label", "Which project to show"); pb.setAttribute("aria-haspopup", "dialog");
+    pb.textContent = `${data.project || "unknown"} ▾`;
+    proj.append(pb);
+  } else {
+    const pv = document.createElement("b");
+    pv.textContent = data.project || "unknown";
+    proj.append(pv);
+  }
+  picks.append(proj);
+  if (inProject.length > 1 || ALL.length > 1) {
+    h1.textContent = "Harness Map";
+    const wrap = document.createElement("label");
+    wrap.id = "harness-pick";
+    wrap.append("Viewing ");
+    const sel = document.createElement("select");
+    sel.setAttribute("aria-label", "Which harness to show");
+    for (const s of inProject) {
+      const o = document.createElement("option");
+      o.value = s.harness?.id || ""; o.textContent = s.harness?.name || s.harness?.id || "harness";
+      o.selected = s === data;
+      sel.appendChild(o);
+    }
+    sel.disabled = inProject.length < 2;
+    sel.addEventListener("change", () => go({ project: data.project, harness: sel.value }));
+    wrap.appendChild(sel);
+    picks.append(wrap);
+  }
+  if (SERVE?.token) {
+    // Folder picker: browse folder names the server lists, or type a path, then map it. The browser cannot hand a
+    // page a real folder path, so the local server does the listing.
+    const api = (u, init = {}) => fetch(u, { ...init, headers: { ...(init.headers || {}), "X-Harness-Token": SERVE.token } });
+    const pb = proj.querySelector("#project-btn");
+    const pop = document.createElement("div");
+    pop.id = "folder-pop"; pop.className = "panel"; pop.hidden = true;
+    pop.innerHTML = `<div class="fp-head">Mapped</div><div class="fp-mapped"></div><div class="fp-head">Other folder</div><div class="fp-row"><button type="button" class="serve-btn" data-up title="Parent folder">Up</button><input type="text" spellcheck="false" autocomplete="off" aria-label="Folder path" placeholder="~/code/my-app"></div><div class="fp-list" role="listbox" aria-label="Folders"></div><div class="fp-row"><span class="fp-status"></span><button type="button" class="serve-btn" data-map>Map this folder</button></div>`;
+    // Folders already mapped switch at once; the current one is marked.
+    for (const p of PROJECTS) {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = p;
+      if (p === data.project) { b.setAttribute("aria-current", "true"); b.textContent = `✓ ${p}`; }
+      b.addEventListener("click", () => { if (p === data.project) pop.hidden = true; else go({ project: p, harness: data.harness?.id || "" }); });
+      pop.querySelector(".fp-mapped").append(b);
+    }
+    const input = pop.querySelector("input"), list = pop.querySelector(".fp-list"), status = pop.querySelector(".fp-status"), mapBtn = pop.querySelector("[data-map]");
+    // The folder part of what is typed, and the start of a name to filter by.
+    const split = (v) => { const i = v.lastIndexOf("/"); return i < 0 ? [v || "~", ""] : [v.slice(0, i) || "/", v.slice(i + 1)]; };
+    let seq = 0;
+    async function refresh() {
+      const [dir, partial] = split(input.value.trim());
+      const n = ++seq;
+      let data = { entries: [] };
+      try { const r = await api(`dirs?path=${encodeURIComponent(dir)}`); if (r.ok) data = await r.json(); } catch {}
+      if (n !== seq) return;
+      list.replaceChildren();
+      const shown = data.entries.filter((e) => e.toLowerCase().startsWith(partial.toLowerCase()));
+      for (const e of shown.slice(0, 200)) {
+        const b = document.createElement("button");
+        b.type = "button"; b.setAttribute("role", "option"); b.textContent = e;
+        b.addEventListener("click", () => { input.value = `${data.dir === "/" ? "" : data.dir}/${e}/`; refresh(); input.focus(); });
+        list.append(b);
+      }
+      if (!shown.length) { const p = document.createElement("p"); p.className = "fp-empty"; p.textContent = data.dir ? "No folders here." : "No folder at that path."; list.append(p); }
+    }
+    let t;
+    input.addEventListener("input", () => { clearTimeout(t); t = setTimeout(refresh, 120); });
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") mapBtn.click(); if (e.key === "Escape") pop.hidden = true; });
+    pop.querySelector("[data-up]").addEventListener("click", () => {
+      const v = input.value.trim().replace(/\/+$/, ""), i = v.lastIndexOf("/");
+      input.value = i > 0 ? v.slice(0, i + 1) : "/"; refresh(); input.focus();
+    });
+    mapBtn.addEventListener("click", async () => {
+      const dir = input.value.trim().replace(/(.)\/+$/, "$1");
+      if (!dir) return;
+      mapBtn.disabled = true; status.textContent = "Scanning…";
+      try {
+        const r = await api("project", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dir }) });
+        const body = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(body.error || "The scan failed.");
+        go({ project: body.project, harness: data.harness?.id || "" });
+      } catch (e) { status.textContent = e.message; mapBtn.disabled = false; }
+    });
+    // The project button opens the picker under itself, and closes it again.
+    pb.addEventListener("click", () => {
+      if (!pop.hidden) { pop.hidden = true; return; }
+      pop.hidden = false;
+      const r = pb.getBoundingClientRect();
+      pop.style.top = `${r.bottom + 6}px`;
+      pop.style.left = `${Math.max(16, Math.min(r.left, innerWidth - pop.offsetWidth - 16))}px`;
+      if (!input.value) input.value = `${String(data.project || "~").replace(/\/[^/]*$/, "") || "~"}/`;
+      refresh();
+    });
+    document.addEventListener("click", (e) => { if (!pop.hidden && !pop.contains(e.target) && e.target !== pb) pop.hidden = true; });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !pop.hidden) { pop.hidden = true; pb.focus(); } });
+    document.body.append(pop);
+    const rb = document.createElement("button");
+    rb.id = "rescan"; rb.className = "serve-btn";
+    rb.type = "button";
+    rb.textContent = "Rescan";
+    rb.title = "Scan your setup again. File sizes update now; the first-turn total moves after you start a new session.";
+    rb.addEventListener("click", async () => {
+      rb.disabled = true; rb.textContent = "Scanning…";
+      try {
+        const r = await fetch("rescan", { method: "POST", headers: { "X-Harness-Token": SERVE.token } });
+        if (!r.ok) throw new Error(String(r.status));
+        location.reload();
+      } catch { rb.disabled = false; rb.textContent = "Rescan failed, retry"; }
+    });
+    picks.append(rb);
+  }
+  row.append(h1, picks);
+}
+document.getElementById("def").innerHTML = `<b>Context</b> is everything the model reads on each turn. It has no other memory, so this map shows what ${esc(HT.name)} puts there before you type.`;
+// Only describe what this snapshot has: no "names only" ring, memory or usage fade where the harness records none.
+const HAS = (pred) => data.nodes.some(pred);
+const HAS_DEFERRED = HAS((n) => n.load === "deferred");
+document.getElementById("perm-lines-help").hidden = !data.edges.some((e) => e.kind === "allows" || e.kind === "asks" || e.kind === "blocks");
+const HAS_USAGE = HAS((n) => n.kind === "mcp_server" && n.detail?.usedInDays);
+document.getElementById("help-floors").textContent = HT.floors || HARNESS_TEXT["claude-code"].floors;
+if (!HAS_DEFERRED) document.getElementById("help-deferred").remove();
+for (const [id, kinds] of [["expand-memory", ["memory_index", "memory_file"]], ["expand-skills", ["skill_listing"]], ["expand-plugins", ["plugin"]], ["expand-servers", ["mcp_server"]]]) {
+  if (!HAS((n) => kinds.includes(n.kind))) document.getElementById(id)?.closest("label")?.setAttribute("hidden", "");
+}
+for (const g of document.querySelectorAll("#controls .grp")) if (!g.querySelector("label:not([hidden])")) g.hidden = true;
+const mobile = matchMedia("(max-width: 640px)").matches;
+
+const FLOORS = { managed: 160, user: 80, project: 0, local: -80, session: -160 };
+const RING = { always: 30, deferred: 75, wiring: 130, on_demand: 190 };
+const R_OUT = Math.max(...Object.values(RING));
+const RING_NAME = { always: "always", deferred: "names only", wiring: "wiring", on_demand: "on demand" };
+const loadOf = (n) => (n.load === "config" || n.load === "runtime" ? "wiring" : n.load);
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+// Coerce every number: a snapshot passed with --from may not come from this scanner.
+const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+const fmt = (v) => { const n = num(v); if (n >= 1e6) return +(n / 1e6).toFixed(1) + "M"; return n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + "k" : String(n); };
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+// ----- categories: one color system for the bar, the legend and the nodes -----
+const CATS = [
+  { key: "harness", label: "harness", kinds: ["harness", "harness_block"], color: css("--c-harness") },
+  { key: "instructions", label: HT.instructions, kinds: ["claude_md", "agents_md", "rule", "memory_index", "output_style", "memory_files", "memory_file"], color: css("--c-instructions") },
+  { key: "skills", label: "skill listing", kinds: ["skill_listing", "skill", "command", "agent", "skill_entry"], color: css("--c-skills") },
+  { key: "mcp", label: "MCP instructions", kinds: ["mcp_instructions"], color: css("--c-mcp") },
+  { key: "tools", label: "MCP servers, tool names", kinds: ["tool_group", "mcp_server", "mcp_usage"], color: css("--c-tools") },
+];
+const ON_DEMAND = css("--c-ondemand"), WIRING = css("--c-wiring");
+const catOf = (kind) => CATS.find((c) => c.kinds.includes(kind));
+
+const KIND_LABEL = {
+  harness: `${HT.name} itself`, harness_block: `note ${HT.name} adds before your prompt`, claude_md: "instruction file (CLAUDE.md)", agents_md: "instruction file (AGENTS.md)", rule: "rule file", memory_index: "memory index",
+  memory_files: "memory files", memory_file: "memory file", output_style: "output style", skill_listing: "skill listing", skill: "skill",
+  command: "slash command", agent: "subagent", plugin: "plugin", mcp_server: "MCP server", tool_group: "tool names", skill_entry: "one skill's line in the listing", mcp_usage: "calls to this server (on demand)",
+  mcp_instructions: "MCP server instructions", settings: "settings file", hook: "hook",
+};
+const LOAD_LABEL = {
+  always: "every turn", on_demand: "only when needed", deferred: "names every turn, full definition when used",
+  config: "configuration, not sent as text", runtime: "runs on tool calls, not sent as text",
+};
+const humanKey = (k) => k.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase()).replace(/ ([A-Z])/g, (m) => m.toLowerCase());
+const humanVal = (v) => (v === true ? "yes" : v === false ? "no" : Array.isArray(v) ? v.join(", ") : String(v));
+
+// Everyday analogies, keyed by node kind.
+const ANALOGY = {
+  harness: ["Company handbook", "How this job works and what the tools do, usually the thickest part of the binder."],
+  claude_md: ["Team's how-we-work doc", "Reread before every reply, but only advice: the temp can ignore it, unlike IT locks."],
+  agents_md: ["Team's how-we-work doc", "Reread before every reply, but only advice: the temp can ignore it, unlike IT locks."],
+  harness_block: ["Manager's sticky note", "A short note stuck on the latest message, such as today's date and where they are working."],
+  rule: (n) => n.detail?.pathScoped
+    ? ["Project folder readme", "Advice that appears only when they open files in one part of the project."]
+    : ["Team policy page", "Another advice page in the binder, reread before every reply."],
+  memory_index: ["Index of old notes", "In every binder, so the temp knows which past notes exist."],
+  memory_files: ["Old notes", "Pulled from the shared drive only when a task calls for one."],
+  output_style: ["House writing style", "Advice on tone and length for every reply."],
+  skill_listing: ["List of training guides", "The title and one-line summary of every guide, in every binder."],
+  skill: ["Training guide", "Pulled out when a task calls for that guide."],
+  command: ["Request template", "A saved request you send with one word: a slash command."],
+  agent: ["Colleague you delegate to", "Works from their own binder on one task, then reports back briefly."],
+  plugin: ["Software bundle", "Guides, apps and checks that IT installs together."],
+  mcp_server: ["Account with an outside service", "A login to another company's system; the account itself takes no room in the binder."],
+  tool_group: ["Apps on the laptop", "Only app names are in the binder; the help page opens on first use."],
+  mcp_instructions: ["App quick-start sheet", "An outside service's usage notes, in every binder."],
+  settings: ["IT policy and laptop locks", "Enforced by the company's systems: pre-approved, needs sign-off, or blocked. No argument opens them."],
+  hook: ["Automatic compliance check", "Runs at set moments and can stop the work, whatever the temp wants."],
+};
+const analogyFor = (n) => { const a = ANALOGY[n.kind]; return typeof a === "function" ? a(n) : a; };
+let analogies = false;
+
+// ----- model -----
+const all = data.nodes.map((n) => ({
+  ...n, tokens: num(n.tokens), _load: loadOf(n),
+  outline: Array.isArray(n.outline) ? n.outline.map((s) => ({ ...s, level: num(s.level), tokens: num(s.tokens) })) : undefined,
+  files: Array.isArray(n.files) ? n.files.map((f) => ({ ...f, tokens: num(f.tokens) })) : undefined,
+}));
+const byId = new Map(all.map((n) => [n.id, n]));
+// Each MCP server owns its tool group and instructions; collapsed by default.
+const parentOf = {};
+for (const e of data.edges) if ((e.kind === "exposes" || e.kind === "injects" || e.kind === "called") && byId.get(e.from)?.kind === "mcp_server") parentOf[e.to] = e.from;
+for (const e of data.edges) if (e.kind === "lists" && byId.get(e.from)?.kind === "skill_listing") parentOf[e.to] = e.from;
+// Memory files hang off the file that first links to them: MEMORY.md, then hubs. They unfold, but never fold their
+// tokens into the parent, since MEMORY.md is read every turn and the files only when needed.
+for (const n of all) if (n.kind === "memory_file" && typeof n.parent === "string" && byId.has(n.parent)) parentOf[n.id] = n.parent;
+const childrenOf = {};
+for (const [c, p] of Object.entries(parentOf)) (childrenOf[p] ||= []).push(byId.get(c));
+const expanded = new Set();
+const collapsed = (n) => childrenOf[n.id] && !expanded.has(n.id);
+const folded = (n) => n.kind === "mcp_server" && collapsed(n);
+// A plugin is not a parent (its server and skills already have one), but expanding it reveals what it provides.
+const pluginKids = {}, pluginsOf = {};
+for (const e of data.edges) if (e.kind === "provides" && byId.get(e.from)?.kind === "plugin" && byId.has(e.to)) {
+  (pluginKids[e.from] ||= []).push(byId.get(e.to)); (pluginsOf[e.to] ||= []).push(e.from);
+}
+const unfolded = (n) => {
+  if ((pluginsOf[n.id] || []).some((p) => expanded.has(p))) return true;
+  for (let p = parentOf[n.id]; p; p = parentOf[p]) if (!expanded.has(p)) return false;
+  return true;
+};
+// A collapsed server folds in what it puts in context, not what its calls returned on demand.
+const firstTurnKids = (n) => childrenOf[n.id].filter((c) => c.kind !== "mcp_usage");
+const eff = (n) => n.tokens + (folded(n) ? firstTurnKids(n).reduce((a, c) => a + c.tokens, 0) : 0);
+// A collapsed server sits where its biggest child would.
+const placeOf = (n) => {
+  if (!folded(n)) return n._load;
+  const kids = firstTurnKids(n);
+  return kids.length ? kids.reduce((a, c) => (c.tokens > a.tokens ? c : a))._load : n._load;
+};
+const inContext = (n) => ["always", "deferred"].includes(placeOf(n));
+const groupOf = (n) => (inContext(n) ? "context" : placeOf(n) === "on_demand" ? "on_demand" : "wiring");
+
+// ----- header: the answer in words, then the bar -----
+// A breakdown node repeats tokens its parent already counts, so totals and rankings skip it.
+const isBreakdown = (n) => n.kind === "skill_entry";
+const inFirstTurn = (n) => !isBreakdown(n) && (n.load === "always" || n.load === "deferred");
+const segs = CATS.map((c) => ({ ...c, tokens: all.filter((n) => inFirstTurn(n) && c.kinds.includes(n.kind)).reduce((a, n) => a + n.tokens, 0) }));
+const total = segs.reduce((a, s) => a + s.tokens, 0) || 1;
+const firstTurn = num(data.session.firstTurnTokens) || total;
+let win = num(data.session.contextWindow) || 1000000;
+const biggest = [...segs].sort((a, b) => b.tokens - a.tokens)[0];
+const BIGGEST_NOTE = { harness: `the system prompt and tool definitions ${HT.name} adds itself`, instructions: HT.instrNote, skills: "the name and description of every skill", mcp: "instructions from MCP servers", tools: "the names of tools held in reserve" };
+// Say where the numbers come from: a recorded first turn from a named session, or estimates from config files only.
+const recorded = num(data.session.firstTurnTokens) > 0;
+const when = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); };
+const sessionWho = [data.session.model, when(data.session.startedAt)].filter(Boolean).map(esc).join(", ");
+const sourceLine = recorded
+  ? `Recorded on the first turn of your latest ${esc(HT.name)} session${sessionWho ? ` (${sessionWho})` : ""}. Piece sizes are estimates (characters ÷ 4); the harness slice is the recorded total minus every piece the map can size.`
+  : `No ${esc(HT.name)} session found for this project, so this total is an estimate from config files only.`;
+const over = num(data.session.attribution?.over);
+document.getElementById("takeaway").innerHTML =
+  `<b>${esc(fmt(firstTurn))} tokens</b> ${recorded ? "go" : "would go"} to the model before you type. Biggest: <b>${esc(biggest.label)} ${esc(fmt(biggest.tokens))}</b> (${Math.round(100 * biggest.tokens / firstTurn)}%), ${esc(BIGGEST_NOTE[biggest.key])}.` +
+  `<span class="src">${sourceLine}${over ? ` <span class="warn">The estimates add up to ${esc(fmt(over))} more than the recorded total, so treat sizes as rough.</span>` : ""}</span>`;
+const usage = data.session.firstTurnUsage;
+document.getElementById("meta").textContent =
+  (data.shared ? "Shared view: names, headings and paths are hidden · " : "") +
+  `${data.nodes.length} pieces` +
+  (usage ? ` · ${fmt(usage.cacheRead)} of the first turn reused from cache` : "") +
+  ` · scanned ${new Date(data.generatedAt).toLocaleString()}` +
+  (data.session.notes?.length ? ` · ${data.session.notes.join(" ")}` : "");
+const legend = document.getElementById("legend");
+// Donut: one arc per category, total in the middle.
+let drawDonut;
+{
+  const R = 46, C = 2 * Math.PI * R, GAP = segs.filter((s) => s.tokens).length > 1 ? 1.5 : 0;
+  let offset = 0, arcs = "";
+  for (const s of segs) {
+    if (!s.tokens) continue;
+    const len = C * s.tokens / total;
+    arcs += `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${s.color}" stroke-width="14"
+      stroke-dasharray="${Math.max(0, len - GAP).toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}"
+      transform="rotate(-90 60 60)"><title>${esc(s.label)}: ${esc(fmt(s.tokens))} tokens (${Math.round(100 * s.tokens / total)}%)</title></circle>`;
+    offset += len;
+  }
+  drawDonut = () => {
+  document.getElementById("donut").innerHTML =
+    `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${css("--line")}" stroke-width="14"/>${arcs}
+     <text x="60" y="61" text-anchor="middle" class="total">${esc(fmt(firstTurn))}</text>
+     <text x="60" y="76" text-anchor="middle" class="unit">tokens, turn 1</text>`;
+  };
+  drawDonut();
+}
+// Stat tiles: the numbers a newcomer asks about next.
+function drawTiles() {
+  const servers = all.filter((n) => n.kind === "mcp_server").length;
+  const tiles = [
+    ["First turn", fmt(firstTurn), "tokens"],
+    ["Context window", `${Math.round(100 * firstTurn / win)}%`, `of ${fmt(win)}`],
+    usage ? ["Reused from cache", `${Math.round(100 * num(usage.cacheRead) / (firstTurn || 1))}%`, fmt(usage.cacheRead)] : null,
+    ["On demand", fmt(data.totals?.byLoad?.on_demand), "not loaded yet"],
+    servers ? ["MCP servers", String(servers), segs.find((s) => s.key === "tools").tokens ? `${fmt(segs.find((s) => s.key === "tools").tokens)} in tool names` : "tools counted in harness"] : null,
+  ].filter(Boolean);
+  document.getElementById("tiles").innerHTML = tiles.map(([k, v, sub]) =>
+    `<div class="tile"><div class="k">${esc(k)}</div><div class="v">${esc(v)}<small>${esc(sub)}</small></div></div>`).join("");
+}
+drawTiles();
+function drawLegend() {
+  document.getElementById("donut").classList.toggle("muted", compare);
+  if (compare) {
+    legend.innerHTML = `<span><b>Map and list colors: change since last scan.</b> The donut still shows the current breakdown.</span>` +
+      Object.entries(DIFF).map(([k, c]) => `<span><span class="sw dot" style="background:${c}"></span>${esc(STATUS_LABEL[k])}</span>`).join("");
+    return;
+  }
+  legend.innerHTML = segs.filter((s) => s.tokens).map((s) => `<span><span class="sw" style="background:${s.color}"></span>${esc(s.label)} ${esc(fmt(s.tokens))}</span>`).join("") +
+    `<span class="key">glowing = every turn · frosted = on demand (${esc(fmt(data.totals?.byLoad?.on_demand))} not loaded)${HAS_DEFERRED ? " · core in a shell = names only" : ""} · grey = not sent</span>` +
+    `<span class="key">gem = ${esc(HT.name)} itself · sphere = text · ring = MCP server (orbiting dot = remote${HAS_USAGE ? ", faded = not called lately" : ""}) · cube = settings · pillar = hook</span>`;
+}
+
+// ----- diff against the previous snapshot -----
+const prev = data.previous?.nodes || null;
+let compare = false;
+const prevEff = (n) => {
+  if (!prev) return 0;
+  let t = num(prev[n.id]?.tokens);
+  if (folded(n)) for (const c of firstTurnKids(n)) t += num(prev[c.id]?.tokens);
+  return t;
+};
+const statusOf = (n) => {
+  if (!prev) return "same";
+  if (!prev[n.id]) return "new";
+  const d = eff(n) - prevEff(n);
+  if (Math.abs(d) < Math.max(50, prevEff(n) * 0.05)) return "same";
+  return d > 0 ? "grew" : "shrank";
+};
+// Okabe-Ito colors: distinguishable with common color-vision deficiencies.
+const DIFF = { new: "#cc79a7", grew: "#d55e00", shrank: "#56b4e9", same: "#5d6577" };
+const STATUS_LABEL = { new: "new", grew: "grew", shrank: "shrank", same: "unchanged" };
+if (!prev) document.getElementById("compare-wrap").hidden = true;
+
+const colorOf = (n) => {
+  if (compare) return DIFF[statusOf(n)];
+  if (placeOf(n) === "wiring" && !folded(n)) return WIRING;
+  return (catOf(n.kind) || catOf(folded(n) ? "tool_group" : n.kind))?.color || WIRING;
+};
+
+// ----- sizing: area tracks tokens (radius grows with the square root) -----
+const NODE_REL = 4, R_MIN = 2.5, R_MAX = 26;
+// Scale against the biggest piece in context. Bundles that never load whole (hundreds of memory files) would
+// otherwise shrink everything else, so anything larger is drawn at a capped size and says so in its drawer.
+const maxTokens = Math.max(1, ...all.filter((n) => ["always", "deferred"].includes(n._load)).map((n) => n.tokens));
+const R_CAP = R_MAX * 1.15;
+const radiusOf = (n) => Math.min(R_CAP, R_MIN + (R_MAX - R_MIN) * Math.sqrt(eff(n) / maxTokens));
+const capped = (n) => R_MIN + (R_MAX - R_MIN) * Math.sqrt(eff(n) / maxTokens) > R_CAP;
+const valOf = (n) => (radiusOf(n) / NODE_REL) ** 3; // the library sizes nodes by volume
+
+// ----- ranked list: exact comparisons the 3D view cannot give -----
+// "Show all" lists every piece in context; the panel scrolls once it outgrows the screen.
+let rankAll = false;
+function drawRank() {
+  const every = all.filter((n) => unfolded(n) && inContext(n) && eff(n) > 0 && !isBreakdown(n))
+    .sort((a, b) => eff(b) - eff(a));
+  const top = mobile ? 3 : 7, rows = rankAll ? every : every.slice(0, top);
+  const dup = (n) => every.filter((o) => o.label === n.label).length > 1;
+  const more = every.length > top
+    ? `<button type="button" class="rank-more">${rankAll ? "Show top " + top : `Show all ${every.length}`}</button>` : "";
+  document.getElementById("rank").innerHTML = `<h3>${rankAll ? "Everything" : "Biggest"} in context${compare ? ", colored by change" : ""}</h3><ol>${rows.map((n) =>
+    `<li tabindex="0" data-id="${esc(n.id)}"><span class="sw" style="background:${colorOf(n)}"></span><span class="nm" title="${esc(n.label)}">${esc(n.label)}${dup(n) ? ` <span style="color:var(--faint)">${esc(n.scope)}</span>` : ""}</span>
+     <span class="tk">${esc(fmt(eff(n)))}</span><span class="pc">${Math.round(100 * eff(n) / firstTurn)}%</span>
+     <span class="rb"><span style="width:${(100 * eff(n) / firstTurn).toFixed(1)}%;background:${colorOf(n)}"></span></span></li>`).join("")}</ol>${more}`;
+  document.querySelectorAll("#rank li").forEach((li) => {
+    const open = () => pick(byId.get(li.dataset.id));
+    li.onclick = open;
+    li.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+  });
+  const btn = document.querySelector("#rank .rank-more");
+  if (btn) btn.onclick = () => { rankAll = !rankAll; drawRank(); if (typeof placePanels === "function") placePanels(); };
+}
+
+// ----- graph -----
+const hidden = new Set();
+let query = "";
+const visible = (n) => !hidden.has(groupOf(n)) && (!query || (n.label + " " + n.kind + " " + (n.source || "")).toLowerCase().includes(query));
+
+// Deterministic starting angle per node so layouts are stable between runs.
+const hash = (s) => { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return (h >>> 0) / 2 ** 32; };
+for (const n of all) {
+  const a = hash(n.id) * Math.PI * 2, r = RING[n._load];
+  n.x = Math.cos(a) * r; n.z = Math.sin(a) * r; n.y = FLOORS[n.scope] ?? 0;
+}
+let shown = [];
+// Pull each node toward its floor (y) and its ring radius (xz plane).
+// Floors breathe: a floor widens with the square root of how many of its nodes are showing,
+// and the gap to its neighbours grows with the wider of the two. Project stays at y = 0.
+// A floor with nothing on it is not drawn and takes no height (managed policy, for one,
+// only exists when an organization deploys it).
+const ALL_SCOPES = Object.keys(FLOORS);
+const OCCUPIED = ALL_SCOPES.filter((k) => all.some((n) => n.scope === k));
+// The "empty floors" toggle shows every scope, so you can see where nothing comes from.
+let showEmpty = false, SCOPES = OCCUPIED, ANCHOR = "project";
+function setScopes() {
+  SCOPES = showEmpty ? ALL_SCOPES : OCCUPIED;
+  ANCHOR = SCOPES.includes("project") ? "project" : SCOPES[0];
+}
+setScopes();
+const floorS = Object.fromEntries(ALL_SCOPES.map((k) => [k, 1]));
+const floorY = { ...FLOORS };
+const BASE_COUNT = Object.fromEntries(ALL_SCOPES.map((k) => [k, Math.max(1, all.filter((n) => n.scope === k && !parentOf[n.id]).length)]));
+const S_MAX = 3.2;
+// Unfolded children rise off their floor on a dome: depth 1 spreads evenly over the dome,
+// deeper files sit just past the file that links to them. Floors at or above project domes
+// point up, floors below point down, so a dome never pushes into the floor it belongs to.
+const domeUp = (scope) => ALL_SCOPES.indexOf(scope) <= ALL_SCOPES.indexOf("project");
+const domeR = {};
+const depthOf = (n) => { let d = 0; for (let p = parentOf[n.id]; p; p = parentOf[p]) d++; return d; };
+function placeDomes() {
+  for (const n of all) n._dome = null;
+  for (const k of ALL_SCOPES) domeR[k] = 0;
+  const kids = shown.filter((n) => parentOf[n.id]);
+  for (const k of ALL_SCOPES) {
+    const mine = kids.filter((n) => n.scope === k);
+    if (!mine.length) continue;
+    const R1 = Math.min(760, Math.max(240, Math.sqrt(mine.length) * 34));
+    const byDepth = new Map();
+    for (const n of mine) { const d = depthOf(n); (byDepth.get(d) || byDepth.set(d, []).get(d)).push(n); }
+    for (const d of [...byDepth.keys()].sort((a, b) => a - b)) {
+      const row = byDepth.get(d).sort((a, b) => (a.id < b.id ? -1 : 1)), R = R1 * (1 + 0.35 * (d - 1));
+      row.forEach((n, i) => {
+        const par = byId.get(parentOf[n.id]);
+        let u;
+        if (d === 1 || !par?._dome) {
+          // Fibonacci points over the upper hemisphere, kept a little off the floor plane.
+          const h = 0.12 + 0.88 * (i + 0.5) / row.length, r = Math.sqrt(1 - h * h), a = i * 2.39996;
+          u = { x: Math.cos(a) * r, y: h, z: Math.sin(a) * r };
+        } else {
+          // Spread siblings around their parent; a hub with many links gets a wider patch.
+          const sib = row.filter((m) => parentOf[m.id] === par.id).length;
+          const j = hash(n.id) * Math.PI * 2, w = (0.2 + 0.05 * Math.sqrt(sib)) * Math.sqrt(hash(n.id + "r")), p = par._dome.u;
+          u = { x: p.x + Math.cos(j) * w, y: Math.max(0.1, p.y + Math.sin(j) * w), z: p.z + Math.sin(j) * w * 0.7 };
+          const L = Math.hypot(u.x, u.y, u.z); u = { x: u.x / L, y: u.y / L, z: u.z / L };
+        }
+        n._dome = { u, R };
+      });
+      domeR[k] = Math.max(domeR[k], R);
+    }
+  }
+}
+function floorTargets() {
+  const s = Object.fromEntries(SCOPES.map((k) => [k, Math.min(S_MAX, Math.max(1, Math.sqrt(shown.filter((n) => n.scope === k && !n._dome).length / BASE_COUNT[k])))]));
+  // a is the floor above b: the gap clears a's downward dome and b's upward one.
+  const y = { [ANCHOR]: 0 }, gap = (a, b) => 80 * Math.max(s[a], s[b]) + (domeUp(a) ? 0 : domeR[a]) + (domeUp(b) ? domeR[b] : 0);
+  const i0 = SCOPES.indexOf(ANCHOR);
+  for (let i = i0 - 1; i >= 0; i--) y[SCOPES[i]] = y[SCOPES[i + 1]] + gap(SCOPES[i], SCOPES[i + 1]);
+  for (let i = i0 + 1; i < SCOPES.length; i++) y[SCOPES[i]] = y[SCOPES[i - 1]] - gap(SCOPES[i - 1], SCOPES[i]);
+  return { s, y };
+}
+const ringR = (n) => RING[placeOf(n)] * floorS[n.scope];
+function shellForce(alpha) {
+  for (const n of shown) {
+    if (n._dome) {
+      const { u, R } = n._dome, sg = domeUp(n.scope) ? 1 : -1;
+      n.vx += (u.x * R - n.x) * alpha * 0.4;
+      n.vy += ((floorY[n.scope] ?? 0) + sg * u.y * R - n.y) * alpha * 0.4;
+      n.vz += (u.z * R - n.z) * alpha * 0.4;
+      continue;
+    }
+    n.vy += ((floorY[n.scope] ?? 0) - n.y) * alpha * 0.4;
+    const r = Math.hypot(n.x, n.z) || 1, k = (ringR(n) - r) / r * alpha * 0.4;
+    n.vx += n.x * k; n.vz += n.z * k;
+  }
+}
+
+const LABEL_COUNT = mobile ? 5 : 8;
+let labeled = new Set(), topLabels = [];
+// On a phone the sheet already names the selection; a world-space label there only gets in the way.
+const labelSet = () => new Set(current && !mobile ? [...topLabels, current.id] : topLabels);
+function graphData() {
+  shown = all.filter(unfolded);
+  placeDomes();
+  const ids = new Set(shown.map((n) => n.id));
+  topLabels = shown.filter(inContext).sort((a, b) => eff(b) - eff(a)).slice(0, LABEL_COUNT).map((n) => n.id);
+  labeled = labelSet();
+  const links = data.edges.filter((e) => ids.has(e.from) && ids.has(e.to)).map((e) => ({ source: e.from, target: e.to, kind: e.kind }));
+  return { nodes: shown, links };
+}
+
+// Shape says what a piece is, finish says when it loads, color says its category, size says tokens.
+//   gem = the harness (Claude Code itself), sphere = text the model reads, ring = MCP server, cube = settings or plugin, pillar = hook
+//   glowing solid = every turn, frosted glass = on demand, core in a shell = names only, matte grey = not sent
+const shapeOf = (n) => (n.kind === "harness" ? "gem" : n.kind === "mcp_server" ? "ring" : n.kind === "hook" ? "pillar"
+  : ["settings", "plugin"].includes(n.kind) ? "cube" : "sphere");
+const finishOf = (n) => (compare ? "solid" : { always: "glow", deferred: "core", on_demand: "glass", wiring: "matte" }[placeOf(n)] || "solid");
+const haloTex = (() => {
+  const c = document.createElement("canvas"); c.width = c.height = 64;
+  const g = c.getContext("2d"), grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grd.addColorStop(0, "rgba(255,255,255,0.55)"); grd.addColorStop(0.45, "rgba(255,255,255,0.18)"); grd.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = grd; g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+})();
+function geometryFor(shape, r) {
+  if (shape === "ring") return new THREE.TorusGeometry(r * 0.72, Math.max(0.8, r * 0.26), 12, 36);
+  if (shape === "cube") { const a = Math.max(5, r * 1.5); return new THREE.BoxGeometry(a, a, a); }
+  if (shape === "pillar") return new THREE.CylinderGeometry(1.4, 1.8, 12, 12);
+  return new THREE.SphereGeometry(r, 20, 14);
+}
+// A gem: a faceted solid with crisp edges, so the harness reads as the machine, not as one more piece of text.
+function gemMesh(r, mat, color) {
+  const g = new THREE.Group(), geo = new THREE.IcosahedronGeometry(r * 0.9, 0);
+  g.add(new THREE.Mesh(geo, mat));
+  g.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.55), transparent: true, opacity: 0.8 })));
+  g.rotation.set(0.35, 0.6, 0);
+  return g;
+}
+const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function nodeObject(n) {
+  const g = new THREE.Group(), r = radiusOf(n), shape = shapeOf(n), finish = finishOf(n), color = colorOf(n);
+  if (shape === "gem") {
+    g.add(gemMesh(r, new THREE.MeshLambertMaterial({ color, emissive: color, emissiveIntensity: finish === "glow" ? 0.3 : 0.1, flatShading: true }), color));
+    if (finish === "glow") {
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+      halo.scale.setScalar(r * 3.4); g.add(halo);
+    }
+    if (labeled.has(n.id)) { const s = makeLabel(shortLabel(n), css("--text"), 11, true); s.position.y = r * 1.5 + 9; s.userData.label = 0; s.userData.node = n; g.add(s); }
+    return g;
+  }
+  const body = (geo, mat) => { const m = new THREE.Mesh(geo, mat); if (shape === "ring") m.rotation.x = Math.PI / 2.4; g.add(m); return m; };
+  if (finish === "glass") {
+    body(geometryFor(shape, r), new THREE.MeshLambertMaterial({ color, transparent: true, opacity: 0.18, depthWrite: false }));
+    body(geometryFor(shape, r), new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: 0.22 }));
+  } else if (finish === "core") {
+    body(geometryFor(shape, Math.max(R_MIN, r * 0.45)), new THREE.MeshLambertMaterial({ color }));
+    body(geometryFor(shape, r * 1.15), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.1, depthWrite: false }));
+  } else if (finish === "matte") {
+    body(geometryFor(shape, r), new THREE.MeshLambertMaterial({ color: WIRING, transparent: true, opacity: 0.85 }));
+  } else {
+    body(geometryFor(shape, r), new THREE.MeshLambertMaterial({ color, emissive: color, emissiveIntensity: finish === "glow" ? 0.35 : 0.1 }));
+  }
+  // A remote server gets a dot orbiting its ring: the call leaves your machine.
+  if (shape === "ring" && n.detail?.runs === "remote") {
+    const orbit = new THREE.Group(); orbit.rotation.x = Math.PI / 2.4;
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(Math.max(1.3, r * 0.22), 10, 8), new THREE.MeshBasicMaterial({ color: css("--c-mcp") }));
+    dot.position.x = r * 1.3; orbit.add(dot); g.add(orbit);
+    const phase = hash(n.id) * Math.PI * 2;
+    if (!REDUCED_MOTION) dot.onBeforeRender = () => { orbit.rotation.z = phase + performance.now() / 1400; };
+    else orbit.rotation.z = phase;
+  }
+  // A server nothing called in the scanned window fades: a candidate to turn off.
+  if (n.kind === "mcp_server" && n.detail?.usedInDays && !n.detail.calls) g.traverse((o) => { if (o.material) { o.material.transparent = true; o.material.opacity = (o.material.opacity ?? 1) * 0.3; } });
+  if (shape === "pillar") { const cap = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 1.4, 12), new THREE.MeshLambertMaterial({ color: WIRING })); cap.position.y = 6.5; g.add(cap); }
+  if (finish === "glow") {
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    halo.scale.setScalar(r * 3.4); g.add(halo);
+  }
+  if (labeled.has(n.id)) {
+    const s = makeLabel(shortLabel(n), css("--text"), 11, true);
+    s.userData.label = 0; s.userData.node = n;
+    s.position.y = (shape === "pillar" ? 8 : r) + 9;
+    g.add(s);
+  }
+  return g;
+}
+const shortLabel = (n) => {
+  const base = collapsed(n) ? `${n.label} + ${childrenOf[n.id].length}` : n.label;
+  const t = base.length > 26 ? base.slice(0, 25) + "…" : base;
+  const showScope = n === current || all.filter((o) => o.label === n.label).length > 1;
+  return [t, showScope ? n.scope : "", eff(n) ? fmt(eff(n)) : ""].filter(Boolean).join(" · ");
+};
+
+let current = null;
+// Hover: the node under the pointer pulses gently. The library sizes default spheres through
+// their scale, so remember it and put it back when the pointer leaves.
+let hovered = null, base = null, pulse = 0;
+function hover(n) {
+  if (hovered?.__threeObj && base) hovered.__threeObj.scale.copy(base);
+  cancelAnimationFrame(pulse);
+  hovered = n; base = n?.__threeObj ? n.__threeObj.scale.clone() : null;
+  document.getElementById("graph").style.cursor = n ? "pointer" : "";
+  if (!base || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const t0 = performance.now();
+  const step = (t) => {
+    if (hovered !== n || !n.__threeObj) return;
+    n.__threeObj.scale.copy(base).multiplyScalar(1.15 + 0.12 * Math.sin((t - t0) / 160));
+    pulse = requestAnimationFrame(step);
+  };
+  pulse = requestAnimationFrame(step);
+}
+// Link ends are ids until the layout resolves them to node objects.
+const endOf = (v) => (typeof v === "object" ? v : byId.get(v));
+// Permission lines take the color of their verdict; every other line takes the color of what it leads to.
+const PERM_COLOR = { allows: "#5fbf7f", asks: "#e0a458", blocks: "#e05858" };
+const linkColorOf = (l) => PERM_COLOR[l.kind] || colorOf(endOf(l.target));
+const linkWidthOf = (l) => (current && (endOf(l.source) === current || endOf(l.target) === current) ? 2.2 : 0.8);
+const Graph = new ForceGraph3D(document.getElementById("graph"))
+  .backgroundColor("rgba(0,0,0,0)")
+  .showNavInfo(false)
+  .graphData(graphData())
+  .nodeRelSize(NODE_REL)
+  .nodeVal(valOf)
+  .nodeColor(colorOf)
+  .nodeOpacity(0.95)
+  .nodeThreeObject(nodeObject)
+  .nodeThreeObjectExtend(false)
+  .nodeLabel((n) => {
+    const a = analogies && analogyFor(n);
+    const k = kidsOf(n);
+    const extra = !k ? "" : !expanded.has(n.id) ? ` · ${k.length} parts hidden, click to unfold` : n === current && sideOpen() ? " · click again to fold its parts away" : ` · ${k.length} parts shown`;
+    return `<b>${esc(n.label)}</b><br>${a ? esc(a[0]) + " · " : ""}${esc(KIND_LABEL[n.kind] || n.kind)} · ${esc(n.scope)}${eff(n) ? " · ~" + esc(fmt(eff(n))) + " tokens" : ""}${extra}`;
+  })
+  .nodeVisibility(visible)
+  .linkVisibility((l) => visible(l.source) && visible(l.target))
+  // Edges take the color of what they lead to (tool names blue, instructions purple); the selected node's edges are thicker.
+  .linkColor(linkColorOf)
+  .linkOpacity(0.7)
+  .linkWidth(linkWidthOf)
+  .linkDirectionalArrowLength(4)
+  .linkDirectionalArrowRelPos(0.9)
+  .linkDirectionalArrowColor(linkColorOf)
+  .onNodeHover(hover)
+  .onNodeClick((n) => pick(n))
+  .onBackgroundClick(() => closeSide());
+
+Graph.d3Force("center", null);
+Graph.d3Force("charge").strength(-18);
+// Dome links barely pull, so the dome placement, not the parent, decides where a child sits.
+Graph.d3Force("link").distance(30).strength((l) => (l.source._dome || l.target._dome ? 0.004 : 0.05));
+Graph.d3Force("shell", shellForce);
+// Look slightly above center so the top floor clears the header panel.
+const home = mobile ? { pos: { x: 0, y: 240, z: 1250 }, at: { x: 0, y: 0, z: 0 } } : { pos: { x: 0, y: 200, z: 780 }, at: { x: 0, y: 0, z: 0 } };
+Graph.cameraPosition(home.pos, home.at);
+
+// Nav buttons for when dragging is hard: orbit, tilt, zoom and back to the starting view. Arrow and +/- keys work too.
+{
+  const nav = document.createElement("div");
+  nav.id = "nav"; nav.setAttribute("role", "toolbar"); nav.setAttribute("aria-label", "Move the view");
+  const B = [
+    ["+", "Zoom in", 1, 1, () => move({ zoom: 0.8 })], ["▲", "Tilt up", 2, 1, () => move({ tilt: -0.25 })], ["−", "Zoom out", 3, 1, () => move({ zoom: 1.25 })],
+    ["◀", "Turn left", 1, 2, () => move({ turn: -0.35 })], ["⟲", "Reorient: back to the starting view", 2, 2, () => Graph.cameraPosition(home.pos, home.at, 700)], ["▶", "Turn right", 3, 2, () => move({ turn: 0.35 })],
+    ["▼", "Tilt down", 2, 3, () => move({ tilt: 0.25 })],
+  ];
+  function move({ zoom = 1, turn = 0, tilt = 0 }) {
+    const c = Graph.cameraPosition(), at = Graph.controls().target;
+    const v = { x: c.x - at.x, y: c.y - at.y, z: c.z - at.z };
+    const r = Math.hypot(v.x, v.y, v.z) * zoom;
+    const theta = Math.atan2(v.x, v.z) + turn;
+    const phi = Math.min(Math.PI - 0.15, Math.max(0.15, Math.acos(v.y / Math.hypot(v.x, v.y, v.z)) + tilt));
+    Graph.cameraPosition({ x: at.x + r * Math.sin(phi) * Math.sin(theta), y: at.y + r * Math.cos(phi), z: at.z + r * Math.sin(phi) * Math.cos(theta) }, { x: at.x, y: at.y, z: at.z }, 400);
+  }
+  for (const [txt, label, col, row, fn] of B) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = txt; b.title = label; b.setAttribute("aria-label", label);
+    b.style.gridColumn = col; b.style.gridRow = row;
+    if (txt === "⟲") b.className = "home";
+    b.addEventListener("click", fn);
+    nav.append(b);
+  }
+  document.body.append(nav);
+  addEventListener("keydown", (e) => {
+    if (e.target.closest?.("input, select, textarea, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = { ArrowLeft: () => move({ turn: -0.35 }), ArrowRight: () => move({ turn: 0.35 }), ArrowUp: () => move({ tilt: -0.25 }), ArrowDown: () => move({ tilt: 0.25 }), "+": () => move({ zoom: 0.8 }), "=": () => move({ zoom: 0.8 }), "-": () => move({ zoom: 1.25 }), "0": () => Graph.cameraPosition(home.pos, home.at, 700) }[e.key];
+    if (k) { e.preventDefault(); k(); }
+  });
+}
+
+const restyle = () => { Graph.linkColor(Graph.linkColor()).linkDirectionalArrowColor(Graph.linkDirectionalArrowColor()).nodeColor(colorOf).nodeVal(valOf).nodeThreeObject(nodeObject); drawLegend(); drawRank(); };
+// frame: pull the camera back (or in) so a floor that changed size stays in view.
+const rebuild = (frame = false) => { Graph.graphData(graphData()); restyle(); relayoutFloors(true, frame); document.getElementById("collapse-all").hidden = !expanded.size; };
+
+// Each floor is a scope: a faint plate with a sign naming it and where it lives.
+const FLOOR_PLACE = { managed: "organization policy", user: HT.home, project: HT.projectDir, local: "*.local files", session: "this run's transcript" };
+const scene = Graph.scene();
+const floorGfx = {}, ringLabels = [];
+for (const scope of ALL_SCOPES) { const y = FLOORS[scope], empty = !OCCUPIED.includes(scope);
+  const grp = new THREE.Group(); grp.position.y = y; scene.add(grp);
+  const plate = new THREE.Mesh(new THREE.CircleGeometry(R_OUT + 18, 72),
+    new THREE.MeshBasicMaterial({ color: 0x9aa3b5, transparent: true, opacity: 0.045, side: THREE.DoubleSide, depthWrite: false }));
+  plate.rotation.x = -Math.PI / 2; plate.position.y = -0.5;
+  grp.add(plate);
+  for (const r of Object.values(RING)) {
+    const m = new THREE.Mesh(new THREE.RingGeometry(r - 0.5, r + 0.5, 96),
+      new THREE.MeshBasicMaterial({ color: 0x8b93a7, transparent: true, opacity: 0.1, side: THREE.DoubleSide }));
+    m.rotation.x = -Math.PI / 2;
+    grp.add(m);
+  }
+  const s = makeLabel(empty ? `${scope} (none)` : scope, empty ? css("--faint") : css("--text"), empty ? 10 : 15);
+  scene.add(s);
+  const sub = makeLabel(FLOOR_PLACE[scope], css("--faint"), 8);
+  scene.add(sub);
+  floorGfx[scope] = { grp, s, sub };
+}
+// Ring names along the right-hand radius of the bottom floor, where they never overlap.
+for (const [load, r] of Object.entries(RING)) {
+  const s = makeLabel(RING_NAME[load], css("--muted"), 11);
+  scene.add(s);
+  ringLabels.push([s, r]);
+}
+// Place plates, rings and signs for the current floor sizes.
+function placeFloors() {
+  for (const [scope, { grp, s, sub }] of Object.entries(floorGfx)) {
+    const k = floorS[scope], y = floorY[scope], edge = -R_OUT * k - 20;
+    grp.visible = s.visible = sub.visible = SCOPES.includes(scope);
+    grp.position.y = y; grp.scale.set(k, 1, k);
+    s.position.set(edge - s.scale.x / 2, y + 4, 0);
+    sub.position.set(edge - sub.scale.x / 2, y - 8, 0);
+  }
+  const low = SCOPES[SCOPES.length - 1];
+  for (const [s, r] of ringLabels) s.position.set(r * floorS[low], floorY[low] - 12, 0);
+}
+const extent = () => Math.max(...SCOPES.map((k) => R_OUT * floorS[k]), (floorY[SCOPES[0]] - floorY[SCOPES[SCOPES.length - 1]]) / 2);
+let floorAnim = 0;
+function relayoutFloors(animate, frame) {
+  const t = floorTargets(), from = { s: { ...floorS }, y: { ...floorY } }, e0 = extent();
+  // Hidden floors have no target and keep their last position, so they reappear from somewhere real.
+  const set = (u) => { for (const k of ALL_SCOPES) { if (!(k in t.s)) continue; floorS[k] = from.s[k] + (t.s[k] - from.s[k]) * u; floorY[k] = from.y[k] + (t.y[k] - from.y[k]) * u; } placeFloors(); };
+  cancelAnimationFrame(floorAnim);
+  if (!animate) { set(1); return; }
+  const start = performance.now(), D = 500, ease = (u) => 1 - (1 - u) ** 3;
+  const step = (now) => { const u = Math.min(1, (now - start) / D); set(ease(u)); if (u < 1) floorAnim = requestAnimationFrame(step); };
+  floorAnim = requestAnimationFrame(step);
+  Graph.d3ReheatSimulation();
+  if (frame) {
+    set(1); const e1 = extent(); set(0); // measure the end state, then animate from the start
+    if (Math.abs(e1 - e0) > 1) {
+      const c = Graph.cameraPosition(), at = Graph.controls().target, f = e1 / e0;
+      Graph.cameraPosition({ x: at.x + (c.x - at.x) * f, y: at.y + (c.y - at.y) * f, z: at.z + (c.z - at.z) * f }, at, 600);
+    }
+  }
+}
+relayoutFloors(false);
+
+// ----- label declutter -----
+// Node labels are world-space sprites, so they pile up where nodes cluster (the session floor).
+// A few times a second, project each label to the screen and hide the lower-priority one of any
+// overlapping pair. Floor and ring names always win; the selected node wins over the rest.
+function labelPrio(n) { return current && n.id === current.id ? 1e12 : eff(n); }
+for (const [scope, { s, sub }] of Object.entries(floorGfx)) { s.userData.label = 1e15; sub.userData.label = 1e14; s.userData.scope = sub.userData.scope = scope; }
+for (const [s] of ringLabels) s.userData.label = 1e13;
+const _v = new THREE.Vector3(), _r = new THREE.Vector3(), _u = new THREE.Vector3();
+function declutter() {
+  const cam = Graph.camera(), el = Graph.renderer().domElement, W = el.clientWidth, H = el.clientHeight;
+  _r.setFromMatrixColumn(cam.matrixWorld, 0); _u.setFromMatrixColumn(cam.matrixWorld, 1);
+  const toScreen = (p) => { _v.copy(p).project(cam); return [(_v.x + 1) / 2 * W, (1 - _v.y) / 2 * H, _v.z]; };
+  const items = [];
+  scene.traverse((o) => {
+    if (o.userData.label === undefined || !o.isSprite) return;
+    let shown = true; for (let p = o.parent; p; p = p.parent) if (p.visible === false) { shown = false; break; }
+    if (!shown) { o.visible = false; return; }
+    // Floor signs sit in the scene, not in their floor group: a hidden (empty) floor keeps its sign hidden too.
+    if (o.userData.scope && !SCOPES.includes(o.userData.scope)) { o.visible = false; return; }
+    const c = o.getWorldPosition(new THREE.Vector3()), ws = new THREE.Vector3(); o.getWorldScale(ws);
+    const [x, y, z] = toScreen(c);
+    const [x2] = toScreen(c.clone().addScaledVector(_r, ws.x / 2)), [, y2] = toScreen(c.clone().addScaledVector(_u, ws.y / 2));
+    const hw = Math.abs(x2 - x), hh = Math.abs(y2 - y);
+    if (z > 1) { o.visible = false; return; }
+    // Floor signs are drawn from a fixed place; a node's label re-reads its priority so selection wins.
+    const prio = o.userData.label > 1e12 ? o.userData.label : (o.userData.node ? labelPrio(o.userData.node) : 0);
+    items.push({ o, prio, box: [x - hw - 2, y - hh - 1, x + hw + 2, y + hh + 1] });
+  });
+  items.sort((a, b) => b.prio - a.prio);
+  const kept = [];
+  for (const it of items) {
+    const [a0, a1, a2, a3] = it.box;
+    const hit = kept.some(([b0, b1, b2, b3]) => a0 < b2 && a2 > b0 && a1 < b3 && a3 > b1);
+    it.o.visible = !hit;
+    if (!hit) kept.push(it.box);
+  }
+}
+setInterval(declutter, 150);
+function makeLabel(text, color, height, backing = false) {
+  const font = "600 40px system-ui, sans-serif";
+  const c = document.createElement("canvas"), ctx = c.getContext("2d");
+  ctx.font = font;
+  const pad = backing ? 18 : 8;
+  c.width = Math.ceil(ctx.measureText(text).width) + pad * 2; c.height = 60;
+  if (backing) {
+    ctx.fillStyle = "rgba(13,15,20,0.78)";
+    ctx.beginPath(); ctx.roundRect(0, 0, c.width, c.height, 16); ctx.fill();
+  }
+  ctx.font = font; ctx.fillStyle = color; ctx.textBaseline = "middle";
+  if (!backing) { ctx.shadowColor = "#000"; ctx.shadowBlur = 6; }
+  ctx.fillText(text, pad, 31);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, depthTest: !backing }));
+  s.scale.set(height * c.width / c.height, height, 1);
+  if (backing) s.renderOrder = 10;
+  return s;
+}
+
+// ----- context window bar, beside "Biggest in context" -----
+// One gauge for how full the window is: by category at rest, piece by piece during Play turn 1.
+const KIND_ORDER = { harness: 0, harness_block: 1, output_style: 1, claude_md: 2, agents_md: 2, rule: 3, memory_index: 4, skill_listing: 5, mcp_instructions: 6, mcp_server: 7, tool_group: 7 };
+const SCOPE_ORDER = { managed: 0, user: 1, project: 2, local: 3, session: 4 };
+const budgetEl = document.getElementById("budget"), fillEl = budgetEl.querySelector(".bf");
+const statusEl = document.getElementById("packet-status"), playBtn = document.getElementById("play");
+const segHtml = (color, tokens, title) => `<span style="height:${(100 * tokens / win).toFixed(3)}%;background:${color}" title="${esc(title)}"></span>`;
+function drawBudget() {
+  budgetEl.querySelector(".bk").textContent = fmt(win);
+  budgetEl.querySelector(".bv").textContent = `${Math.round(100 * firstTurn / win)}%`;
+  budgetEl.title = `Turn 1 uses ${fmt(firstTurn)} of a ${fmt(win)} context window` +
+    (win === num(data.session.contextWindow) && data.session.contextWindowFrom ? ` (from ${data.session.contextWindowFrom})` : "");
+  if (!playing) fillEl.innerHTML = segs.filter((c) => c.tokens).map((c) => segHtml(c.color, c.tokens, `${c.label}: ${fmt(c.tokens)}`)).join("");
+}
+let playing = false, flights = [], packetTimers = [], ghosts = null;
+function clearPacket() {
+  packetTimers.forEach(clearTimeout); packetTimers = []; flights = [];
+  if (ghosts) { scene.remove(ghosts); ghosts.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); }); }
+  ghosts = null; playing = false; drawBudget();
+}
+// The world point under a screen pixel, at the depth of the scene's center: where a ghost should fly to.
+const toWorld = (sx, sy) => {
+  const cam = Graph.camera(), z = new THREE.Vector3(0, 0, 0).project(cam).z;
+  return new THREE.Vector3((sx / innerWidth) * 2 - 1, -(sy / innerHeight) * 2 + 1, z).unproject(cam);
+};
+function playTurn1() {
+  clearPacket();
+  playing = true; fillEl.innerHTML = "";
+  ghosts = new THREE.Group(); scene.add(ghosts);
+  const pieces = shown.filter((n) => inContext(n) && eff(n) > 0 && visible(n) && !isBreakdown(n))
+    .sort((a, b) => (KIND_ORDER[a.kind] ?? 6) - (KIND_ORDER[b.kind] ?? 6) || (SCOPE_ORDER[a.scope] ?? 9) - (SCOPE_ORDER[b.scope] ?? 9) || eff(b) - eff(a));
+  const still = mobile || matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const step = Math.min(320, 4200 / Math.max(1, pieces.length));
+  let sum = 0, landed = 0;
+  const land = (n) => {
+    fillEl.insertAdjacentHTML("beforeend", segHtml(colorOf(n), eff(n), `${n.label}: ${fmt(eff(n))}`));
+    sum += eff(n); landed++;
+    const done = landed === pieces.length;
+    statusEl.innerHTML = `<b>${esc(fmt(sum))}</b> of ${esc(fmt(win))} (${Math.round(100 * sum / win)}%) · ${done ? "turn 1 is ready, and you have not typed yet" : `adding ${esc(n.label)}`}`;
+    if (done) playBtn.textContent = "Clear";
+  };
+  playBtn.textContent = "Stop";
+  statusEl.textContent = "Starting with the harness's own system prompt…";
+  pieces.forEach((n, i) => packetTimers.push(setTimeout(() => {
+    if (still || !ghosts) return land(n);
+    const ghost = new THREE.Mesh(new THREE.SphereGeometry(Math.min(radiusOf(n), 8), 16, 12), new THREE.MeshBasicMaterial({ color: colorOf(n), transparent: true, opacity: 0.9 }));
+    ghost.position.set(n.x, n.y, n.z); ghosts.add(ghost);
+    flights.push({ n, ghost, from: ghost.position.clone(), t0: performance.now(), dur: 750 });
+  }, i * step)));
+  const tick = (t) => {
+    if (!ghosts) return;
+    const bar = budgetEl.querySelector(".bt").getBoundingClientRect(), filled = fillEl.getBoundingClientRect().height;
+    const to = toWorld(bar.left + bar.width / 2, bar.bottom - filled);
+    flights = flights.filter((f) => {
+      const k = Math.min(1, (t - f.t0) / f.dur), e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+      f.ghost.position.lerpVectors(f.from, to, e);
+      f.ghost.scale.setScalar(1 - 0.6 * e); // shrink as it nears the bar
+      if (k < 1) return true;
+      ghosts.remove(f.ghost); f.ghost.geometry.dispose(); f.ghost.material.dispose();
+      land(f.n); return false;
+    });
+    if (landed < pieces.length) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+playBtn.addEventListener("click", () => {
+  stopSession();
+  if (playing) { clearPacket(); playBtn.textContent = "Play turn 1"; statusEl.textContent = "Watch the pieces stack into what the model receives."; }
+  else playTurn1();
+});
+
+// ----- play the session: every turn sends the same setup again, with the conversation growing behind it -----
+// session.turns holds, per prompt you typed, the first request's input tokens as [uncached, cache write, cache read].
+const TURNS = (Array.isArray(data.session.turns) ? data.session.turns : []).map((t) => (Array.isArray(t) ? t.map(num) : [0, 0, 0]));
+const sessBtn = document.getElementById("play-session"), scrub = document.getElementById("turn-scrub"), scrubIn = scrub.querySelector("input");
+let sessTimer = null;
+const turnTotal = (i) => (TURNS[i] ? TURNS[i][0] + TURNS[i][1] + TURNS[i][2] : 0);
+function showTurn(i) {
+  clearPacket();
+  const total = turnTotal(i), setup = Math.min(firstTurn, total), conv = Math.max(0, total - setup);
+  const fresh = i === 0 ? 0 : Math.min(conv, Math.max(0, total - turnTotal(i - 1)));
+  const cached = total ? Math.floor(100 * TURNS[i][2] / total) : 0;
+  const k = firstTurn ? setup / firstTurn : 1;
+  // The setup stays the same colors as turn 1, dimmed after turn 1 because it is sent again, mostly from cache.
+  fillEl.innerHTML = segs.filter((c) => c.tokens).map((c) => segHtml(c.color, c.tokens * k, `${c.label}: ${fmt(c.tokens)}, sent again`).replace("<span ", `<span class="${i ? "resent" : ""}" `)).join("")
+    + (conv - fresh > 0 ? segHtml("#8a93a6", conv - fresh, `Conversation so far: ${fmt(conv - fresh)}`) : "")
+    + (fresh > 0 ? segHtml("#ffffff", fresh, `New this turn: ${fmt(fresh)}`) : "");
+  budgetEl.querySelector(".bv").textContent = `${Math.round(100 * total / win)}%`;
+  const compacted = i > 0 && total < turnTotal(i - 1) * 0.7;
+  statusEl.innerHTML = `Turn <b>${i + 1}</b> of ${TURNS.length}: <b>${esc(fmt(total))}</b> sent (${Math.round(100 * total / win)}% of ${esc(fmt(win))}) · `
+    + (i === 0 ? "the setup, plus your first message" : `the same ${esc(fmt(setup))} setup again, plus ${esc(fmt(conv))} of conversation${fresh ? ` (${esc(fmt(fresh))} new since your last message)` : ""}`)
+    + ` · ${cached}% from cache${compacted ? " · the conversation was compacted" : ""}`;
+  scrubIn.value = String(i + 1);
+}
+function stopSession() {
+  if (sessTimer) { clearInterval(sessTimer); sessTimer = null; }
+  sessBtn.textContent = `Play the session (${TURNS.length} turns)`;
+}
+function playSession() {
+  stopSession(); clearPacket();
+  playBtn.textContent = "Play turn 1";
+  scrub.hidden = false;
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (still) { showTurn(TURNS.length - 1); return; }
+  // About nine seconds for the whole session, however many turns it had.
+  const stepMs = Math.max(40, Math.min(400, 9000 / TURNS.length));
+  let i = 0;
+  showTurn(0);
+  sessBtn.textContent = "Stop";
+  sessTimer = setInterval(() => {
+    if (++i >= TURNS.length) { stopSession(); return; }
+    showTurn(i);
+  }, stepMs);
+}
+if (TURNS.length > 1) {
+  sessBtn.hidden = false;
+  scrubIn.max = String(TURNS.length);
+  stopSession();
+  sessBtn.title = "Watch the same setup go out again on every turn, with the conversation growing behind it";
+  sessBtn.addEventListener("click", () => { if (sessTimer) stopSession(); else playSession(); });
+  scrubIn.addEventListener("input", () => { stopSession(); showTurn(Number(scrubIn.value) - 1); });
+}
+const windowSelect = document.getElementById("window-select");
+if (![...windowSelect.options].some((o) => Number(o.value) === win)) windowSelect.add(new Option(fmt(win), String(win)));
+windowSelect.value = String(win);
+windowSelect.addEventListener("change", () => {
+  win = Number(windowSelect.value); drawTiles();
+  if (playing) playTurn1(); else if (!scrub.hidden && TURNS.length) showTurn(Number(scrubIn.value) - 1); else drawBudget();
+});
+
+// ----- details panel -----
+const side = document.getElementById("side");
+function placePanels() {
+  const top = document.getElementById("top").getBoundingClientRect().bottom + 12;
+  const help = document.querySelector(".help:not([hidden])"), helpRect = help?.getBoundingClientRect(), helpTop = helpRect?.height ? helpRect.top : innerHeight;
+  if (!mobile) side.style.top = top + "px";
+  const rank = document.getElementById("rank");
+  rank.style.top = top + "px";
+  rank.style.maxHeight = Math.max(0, helpTop - top - 12) + "px";
+  rank.style.overflow = "auto";
+  budgetEl.style.top = top + "px";
+  budgetEl.style.height = rank.getBoundingClientRect().height + "px";
+  frame();
+}
+// Center the scene in the part of the screen no panel covers, so nothing hides behind the header,
+// the ranked list or the drawer. A view offset shifts the projection without moving the camera.
+function frame() {
+  const W = innerWidth, H = innerHeight, rank = document.getElementById("rank").getBoundingClientRect();
+  let top = document.getElementById("top").getBoundingClientRect().bottom, left = 0, right = W, bottom = H;
+  if (mobile) top = Math.max(top, rank.bottom); else left = budgetEl.getBoundingClientRect().right;
+  if (sideOpen()) { if (mobile) bottom = H - side.offsetHeight; else right = W - side.offsetWidth; }
+  const cx = (left + right) / 2, cy = (top + bottom) / 2, cam = Graph.camera();
+  cam.setViewOffset(W, H, W / 2 - cx, H / 2 - cy, W, H);
+  cam.updateProjectionMatrix();
+}
+let tab = "overview";
+const openSide = () => {
+  side.classList.add("open"); side.setAttribute("aria-hidden", "false"); placePanels();
+  // If the slide animation never runs (throttled or hidden pages), snap it into place.
+  setTimeout(() => {
+    if (side.classList.contains("open") && getComputedStyle(side).transform !== "none") {
+      side.style.transition = "none"; void side.offsetHeight; side.style.transition = "";
+    }
+  }, 450);
+};
+const closeSide = () => { side.classList.remove("open"); side.setAttribute("aria-hidden", "true"); frame(); };
+const sideOpen = () => side.classList.contains("open");
+// Clicking a piece selects it and unfolds its parts; clicking the open piece again folds them away.
+const kidsOf = (n) => childrenOf[n.id] || pluginKids[n.id];
+function pick(n) {
+  if (!n) return;
+  if (kidsOf(n) && n === current && sideOpen()) {
+    expanded.has(n.id) ? expanded.delete(n.id) : expanded.add(n.id);
+    rebuild(true); show(n, false); return;
+  }
+  if (kidsOf(n) && !expanded.has(n.id)) { expanded.add(n.id); rebuild(); }
+  show(n);
+}
+addEventListener("keydown", (e) => { if (e.key === "Escape") closeSide(); });
+const RUNS_LABEL = { local: "on your machine", remote: "remote", unknown: "unknown" };
+function show(n, fly = true) {
+  if (!n) return;
+  const rows = [
+    ["Type", KIND_LABEL[n.kind] || n.kind], ["From", n.scope],
+    ...data.edges.filter((e) => e.to === n.id && byId.get(e.from)?.kind === "plugin").map((e) => ["Came with", `${byId.get(e.from).label} plugin`]), ["Loads", LOAD_LABEL[n.load] || n.load],
+    ["Tokens", eff(n) ? "~" + eff(n).toLocaleString() + (folded(n) ? " with its tools" : "") : "none"], ["File", n.source], ...(capped(n) ? [["Drawn", "at a capped size, too big to draw to scale"]] : []),
+    ...(prev ? [["Change", statusOf(n) === "new" ? "new since last scan" : `${eff(n) - prevEff(n) >= 0 ? "+" : ""}${(eff(n) - prevEff(n)).toLocaleString()} tokens`]] : []),
+    ...(n.kind === "mcp_server" && n.detail?.usedInDays ? [["Used", n.detail.calls ? `${n.detail.calls.toLocaleString()} calls in ${n.detail.sessionsUsing} sessions, last ${n.detail.lastUsed} (past ${n.detail.usedInDays} days)` : `not called in the past ${n.detail.usedInDays} days`]] : []),
+    ...(() => { const by = data.edges.filter((e) => e.kind === "uses" && e.to === n.id).map((e) => byId.get(e.from)?.label).filter(Boolean); return by.length ? [["Used by skills", by.join(", ")]] : []; })(),
+    ...(() => { const to = data.edges.filter((e) => e.kind === "uses" && e.from === n.id).map((e) => byId.get(e.to)?.label).filter(Boolean); return to.length ? [["Uses servers", to.join(", ")]] : []; })(),
+    ...(n.detail?.runs ? [["Runs", `${RUNS_LABEL[n.detail.runs] || n.detail.runs}: ${n.detail.runsWhy || ""}`]] : []),
+    ...Object.entries(n.detail || {}).filter(([k]) => !["affects", "rulesByTool"].includes(k)).filter(([k]) => !["runs", "runsWhy", "usedInDays", "calls", "sessionsUsing", "lastUsed"].includes(k) || n.kind !== "mcp_server").filter(([, v]) => v !== undefined && v !== null && v !== "").map(([k, v]) => [humanKey(k), humanVal(v)]),
+  ];
+  let linked = data.edges.filter((e) => e.from === n.id || e.to === n.id)
+    .map((e) => { const o = byId.get(e.from === n.id ? e.to : e.from); return `${esc(e.from === n.id ? e.kind : ({ allows: "allowed by", asks: "asks first, by", blocks: "blocked by" }[e.kind] || "from"))}: ${esc(o?.label)}`; })
+    .filter((x, i, arr) => arr.length <= 12 || i < 10);
+  { const total = data.edges.filter((e) => e.from === n.id || e.to === n.id).length; if (total > linked.length) linked.push(`+ ${total - linked.length} more`); }
+  const was = current;
+  const opening = current !== n;
+  current = n;
+  const a = analogyFor(n);
+  const kids = childrenOf[n.id] || pluginKids[n.id];
+  const struct = structure(n);
+  // Tabs: Overview always; Structure only when the file has one; Explain when an everyday explanation exists.
+  const tabs = [["overview", "Overview"], ...(struct ? [["structure", n.outline ? "Structure" : "Files"]] : []), ...(a ? [["analogy", "Explain"]] : [])];
+  // With explain on, a newly opened piece starts on its Explain tab; a tab picked by hand stays while it is open.
+  if (opening && analogies && a) tab = "analogy";
+  if (!tabs.some(([k]) => k === tab)) tab = analogies && a ? "analogy" : "overview";
+  const place = placeOf(n);
+  const metrics = [
+    ...(place === "on_demand" ? [["Size when loaded", eff(n) ? fmt(eff(n)) : "none"], ["Loaded on turn 1", "0"]]
+      : place === "wiring" ? [["Sent as text", eff(n) ? fmt(eff(n)) : "none"], ["Share of turn 1", eff(n) ? `${Math.round(100 * eff(n) / firstTurn)}%` : "0%"]]
+      : [["Tokens", eff(n) ? fmt(eff(n)) : "none"], ["Share of turn 1", `${Math.round(100 * eff(n) / firstTurn)}%`]]),
+    ["Loads", { always: "every turn", on_demand: "when needed", deferred: "names only", config: "config", runtime: "on tool calls" }[n.load] || n.load],
+  ];
+  side.innerHTML = `
+    <div class="dh">
+      <button class="close" aria-label="Close">×</button>
+      <div class="dt"><span class="sw dot" style="background:${colorOf(n)}"></span>${esc(KIND_LABEL[n.kind] || n.kind)} · ${esc(n.scope)}</div>
+      <h2>${esc(n.label)}</h2>
+      <div class="dm">${metrics.map(([k, v]) => `<div class="tile"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join("")}</div>
+      ${kids ? `<button class="act" id="toggle-kids">${expanded.has(n.id) ? "Hide" : "Show"} ${/^memory_/.test(n.kind) ? `the ${kids.length} file${kids.length > 1 ? "s" : ""} it links to` : `its ${kids.length} part${kids.length > 1 ? "s" : ""}`}</button>` : ""}
+      <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="${k === tab}">${esc(l)}</button>`).join("")}</div>
+    </div>
+    <div class="db">
+      <section data-panel="overview" ${tab === "overview" ? "" : "hidden"}>
+        <dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+        ${Array.isArray(n.detail?.affects) ? `<h3 class="sub">What it changes</h3><ul class="affects">${n.detail.affects.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>` : ""}
+        ${Array.isArray(n.detail?.rulesByTool) ? `<h3 class="sub">Permission rules by tool</h3><ul class="affects">${n.detail.rulesByTool.map((t) => `<li>${esc(t)}</li>`).join("")}</ul><p style="color:var(--muted);font-size:12px">Counts only. The rules themselves (commands, paths, sites) stay in the file.</p>` : ""}
+        ${linked.length ? `<h3 style="margin-top:12px">Connections</h3><p style="color:var(--muted);margin:0;font-size:12px">${linked.join("<br>")}</p>` : ""}
+      </section>
+      ${struct ? `<section data-panel="structure" ${tab === "structure" ? "" : "hidden"}>${struct}</section>` : ""}
+      ${a ? `<section data-panel="analogy" ${tab === "analogy" ? "" : "hidden"}><div class="analogy"><b>${esc(a[0])}</b><br>${esc(a[1])}</div>
+        <p style="color:var(--muted);font-size:12px">The model is a temp booked for one session: the onboarding binder is put together when the session starts and reread before every reply. This is one piece of it.</p></section>` : ""}
+    </div>`;
+  side.querySelector(".close").onclick = closeSide;
+  side.querySelectorAll("[data-tab]").forEach((b) => b.onclick = () => {
+    tab = b.dataset.tab;
+    side.querySelectorAll("[data-tab]").forEach((x) => x.setAttribute("aria-selected", x === b));
+    side.querySelectorAll("[data-panel]").forEach((p) => (p.hidden = p.dataset.panel !== tab));
+  });
+  const tk = side.querySelector("#toggle-kids");
+  if (tk) tk.onclick = () => { expanded.has(n.id) ? expanded.delete(n.id) : expanded.add(n.id); rebuild(true); show(n, false); };
+  openSide();
+  if (was !== n) { labeled = labelSet(); Graph.nodeThreeObject(nodeObject).linkWidth(linkWidthOf); }
+  if (!fly) return;
+  const c = Graph.cameraPosition(), D = (mobile ? 700 : 460) + 4 * radiusOf(n);
+  const dx = c.x - n.x, dy = c.y - n.y, dz = c.z - n.z, L = Math.hypot(dx, dy, dz) || 1;
+  Graph.cameraPosition({ x: n.x + dx / L * D, y: n.y + dy / L * D, z: n.z + dz / L * D }, { x: n.x, y: n.y, z: n.z }, 900);
+}
+
+// Inside a file: its headings, indented by level, each with a bar for its share of tokens.
+function structure(n) {
+  const rows = n.outline
+    ? n.outline.map((s) => ({ label: s.title, tokens: s.tokens, indent: Math.max(0, s.level - 1) }))
+    : n.files ? n.files.map((f) => ({ label: String(f.name).replace(/\.md$/, ""), tokens: f.tokens, indent: 0 })) : null;
+  if (!rows?.length) return "";
+  const max = Math.max(...rows.map((r) => r.tokens), 1);
+  const title = n.outline ? `Structure (${rows.length} sections)` : `Biggest ${rows.length} of ${num(n.detail?.count) || rows.length} files`;
+  return `<h3 style="margin-top:12px">${esc(title)}</h3><ol class="struct">${rows.map((r) =>
+    `<li style="padding-left:${num(r.indent) * 12}px" title="${esc(r.label)}: ~${esc(num(r.tokens).toLocaleString())} tokens">
+       <span class="struct-label">${esc(r.label)}</span><span class="struct-tok">${esc(fmt(r.tokens))}</span>
+       <span class="struct-bar" style="width:${(100 * r.tokens / max).toFixed(1)}%"></span></li>`).join("")}</ol>`;
+}
+
+function showDiffSummary() {
+  const rows = [];
+  for (const n of shown) {
+    const s = statusOf(n);
+    if (s !== "same") rows.push([n.label, s, eff(n) - prevEff(n)]);
+  }
+  const ids = new Set(all.map((n) => n.id));
+  const removed = Object.entries(prev).filter(([id]) => !ids.has(id));
+  rows.sort((a, b) => Math.abs(b[2]) - Math.abs(a[2]));
+  const ft = num(data.session.firstTurnTokens), pft = num(data.previous.firstTurnTokens);
+  const sign = (v) => (v >= 0 ? "+" : "") + v.toLocaleString();
+  side.innerHTML = `<button class="close" aria-label="Close">×</button><h2>Changes since ${esc(new Date(data.previous.generatedAt).toLocaleString())}</h2>
+    ${(data.previous.sameSession ?? (data.previous.transcript && data.previous.transcript === data.session.transcript)) ? `<p class="note">Both scans read the same session, so the first-turn total cannot have changed. Start a new ${esc(HT.name)} session after editing your setup, then scan again.</p>` : ""}
+    ${ft && pft ? `<p>First turn: ${esc(sign(ft - pft))} tokens (${esc(fmt(pft))} to ${esc(fmt(ft))})</p>` : ""}
+    ${rows.length ? `<dl>${rows.slice(0, 15).map(([l, s, d]) => `<dt><span class="sw dot" style="background:${DIFF[s]}"></span>${esc(STATUS_LABEL[s])}</dt><dd>${esc(l)} (${esc(sign(d))})</dd>`).join("")}</dl>` : "<p>No changes in what is shown.</p>"}
+    ${removed.length ? `<p style="color:var(--muted);font-size:12px">Removed: ${removed.slice(0, 15).map(([, v]) => esc(v.label)).join(", ")}${removed.length > 15 ? "…" : ""}</p>` : ""}`;
+  side.querySelector(".close").onclick = closeSide;
+  openSide();
+  placePanels();
+}
+
+// ----- controls -----
+if (mobile) document.getElementById("opts").open = false;
+const refresh = () => Graph.nodeVisibility(Graph.nodeVisibility()).linkVisibility(Graph.linkVisibility());
+document.querySelectorAll("[data-show]").forEach((cb) => cb.addEventListener("change", () => {
+  cb.checked ? hidden.delete(cb.dataset.show) : hidden.add(cb.dataset.show); refresh();
+}));
+document.getElementById("analogy").addEventListener("change", (e) => {
+  analogies = e.target.checked;
+  document.getElementById("help").hidden = analogies;
+  document.getElementById("help-analogy").hidden = !analogies;
+  Graph.nodeLabel(Graph.nodeLabel());
+  placePanels();
+  tab = analogies ? "analogy" : "overview";
+  if (current && sideOpen()) show(current, false);
+});
+document.getElementById("compare").addEventListener("change", (e) => {
+  compare = e.target.checked;
+  restyle();
+  compare ? showDiffSummary() : closeSide();
+});
+document.getElementById("show-empty").addEventListener("change", (e) => { showEmpty = e.target.checked; setScopes(); relayoutFloors(true, true); });
+// Each pill unfolds or folds only its own kind, so the two combine.
+const toggleKinds = (test, on) => { for (const id of new Set([...Object.keys(childrenOf), ...Object.keys(pluginKids)])) if (test(byId.get(id)?.kind)) on ? expanded.add(id) : expanded.delete(id); rebuild(true); };
+document.getElementById("collapse-all").addEventListener("click", () => {
+  expanded.clear();
+  for (const id of ["expand-all", "expand-plugins", "expand-skills", "expand-memory"]) document.getElementById(id).checked = false;
+  rebuild(true);
+  if (current && sideOpen()) show(current, false);
+});
+document.getElementById("expand-all").addEventListener("change", (e) => toggleKinds((k) => k === "mcp_server", e.target.checked));
+document.getElementById("expand-plugins").addEventListener("change", (e) => toggleKinds((k) => k === "plugin", e.target.checked));
+document.getElementById("expand-skills").addEventListener("change", (e) => toggleKinds((k) => k === "skill_listing", e.target.checked));
+document.getElementById("expand-memory").addEventListener("change", (e) => toggleKinds((k) => /^memory_(index|file)$/.test(k || ""), e.target.checked));
+document.getElementById("opts").addEventListener("toggle", placePanels);
+document.getElementById("search").addEventListener("input", (e) => { query = e.target.value.trim().toLowerCase(); refresh(); });
+// The graph applies size and camera settings on its next tick, which resets the view offset, so frame after it.
+addEventListener("resize", () => { Graph.width(innerWidth).height(innerHeight); setTimeout(placePanels, 50); });
+drawLegend();
+drawRank();
+drawBudget();
+placePanels();
+setTimeout(placePanels, 50);
+// Deep link: #node=<id> opens that node's details, e.g. #node=memory:files
+const openFromHash = () => {
+  const id = decodeURIComponent(location.hash.match(/^#node=(.+)$/)?.[1] || "");
+  const n = id && byId.get(id);
+  if (n) setTimeout(() => pick(n), 600);
+};
+addEventListener("hashchange", openFromHash);
+openFromHash();
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+# Real snapshots describe your machine. Never commit them.
+out/
+node_modules/
+.DS_Store
