@@ -1,14 +1,23 @@
-# claude-harness-map
+<p align="center"><img src="docs/brand/icon.svg" width="112" alt=""></p>
+<h1 align="center">claude-harness-map</h1>
+<p align="center"><em>see everything your coding agent reads before you type</em></p>
 
-An interactive 3D map of what your coding agent (Claude Code or Codex) loads into context before you type, and where each piece comes from.
+<p align="center">
+  <a href="https://mattkyuan.github.io/claude-harness-map/"><img src="https://img.shields.io/badge/demo-live-b48ce8" alt="live demo"></a>
+  <img src="https://img.shields.io/badge/node-%E2%89%A518-f2a65a" alt="node 18 or later">
+  <img src="https://img.shields.io/badge/dependencies-none-6cc4a1" alt="no dependencies">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-7d8cff" alt="MIT license"></a>
+</p>
+
+claude-harness-map draws a 3D map of what **Claude Code** or **Codex** loads into context, from **your config** to **the harness itself**, so you can:
+
+- See where every token of the first turn comes from.
+- Trace each piece to the file, plugin or server that put it there.
+- Spot what changed since your last scan.
+
+In one real session, CLAUDE.md, rules and memory came to 6k tokens of a 103k first turn. The rest was the harness.
 
 ![Demo map](docs/screenshot.jpg)
-
-[Live demo](https://mattkyuan.github.io/claude-harness-map/) (synthetic data)
-
-## Why
-
-Your config files are a small part of the context Claude Code actually sends. In one real session, CLAUDE.md, rules and the memory index came to about 6k tokens, while the first turn was 103k. Most of the rest was the harness itself: the system prompt plus definitions for the tools already loaded. This tool reads both your config and your session logs, so you can see the whole budget and trace each piece to its source.
 
 ## Set it up with Claude Code or Codex
 
