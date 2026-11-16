@@ -24,22 +24,13 @@ In one real session, CLAUDE.md, rules and memory came to 6k tokens of a 103k fir
 Paste this into a Claude Code or Codex session started in the project you want to map:
 
 ```text
-Clone https://github.com/mattkyuan/claude-harness-map into ~/tools/claude-harness-map,
-or run git pull there if it already exists. It needs Node 18 or later and has no
-dependencies, so do not run npm install. Then run this, with this project's full path
-in place of PROJECT:
-
-  node ~/tools/claude-harness-map/scan.mjs --project PROJECT --out ~/tools/claude-harness-map/out
-
-and tell me the full path of the harness-map.html it wrote, so I can open it in a browser.
-Do not read or summarize the generated files: they describe my setup, and I will look
-at the page myself.
+Clone https://github.com/mattkyuan/claude-harness-map to ~/tools/claude-harness-map (or git pull), then run:
+node ~/tools/claude-harness-map/scan.mjs --project "$PWD" --out ~/tools/claude-harness-map/out --open
 ```
 
 - **Live page with Rescan and a folder picker:** `--serve` keeps running until you stop it. In Claude Code, ask for "the same command with `--serve`, run in the background, and give me the address it prints". In Codex, which waits for each command to finish, run that command yourself in a terminal. The address holds a private key, so open it yourself rather than pasting it anywhere.
 - **Codex:** cloning needs network access and writing to `~/tools` is outside the project, so Codex may ask you to approve both.
 - **Windows:** `~` is not expanded for `node` in PowerShell, so ask the agent to use the full path of your home folder.
-- **Updating later:** ask the agent to run `git pull` in `~/tools/claude-harness-map`, then the same command.
 
 ## Run it
 
@@ -51,7 +42,7 @@ From a clone or download of this repository:
 node scan.mjs --project /path/to/your/project
 ```
 
-It shows progress while it reads your setup, prints a short summary, and opens the map in your browser (`--no-open` skips that; it never opens outside a terminal). The page is `out/harness-map.html`; it works from `file://`, online. Every harness set up on your machine is scanned; pick one from the Viewing dropdown.
+It shows progress while it reads your setup, prints a short summary, and opens the map in your browser (`--no-open` skips that; outside a terminal it opens only with `--open`). The page is `out/harness-map.html`; it works from `file://`, online. Every harness set up on your machine is scanned; pick one from the Viewing dropdown.
 
 | Flag | Meaning |
 |---|---|
@@ -62,6 +53,7 @@ It shows progress while it reads your setup, prints a short summary, and opens t
 | `--out <dir>` | Output directory. Default: `./out` |
 | `--from <snapshot.json>` | Render an existing snapshot without scanning |
 | `--share` | Write `harness-map-shared.html`, safe to post: every number and the shape of the map, with names, headings and paths replaced by "memory file 12", "MCP server 3" and so on. Works with `--from` too. Share that page, never the snapshot JSON files next to it. |
+| `--open` | Open the map in your browser even when the scan is not run in a terminal, as when an agent runs it. |
 | `--no-open` | Do not open the map in your browser when the scan finishes. |
 | `--serve` | Open the map at a local address with a **Rescan** button, and a folder picker on the project name (switch between mapped folders, or browse or type a path to map another), instead of writing a file to open. Folders added this way last until the server stops. Listens on 127.0.0.1 only, and the address carries a private key (kept in a cookie after the first visit), so other pages in your browser cannot read the map or start a scan. File sizes update on rescan; the first-turn total moves after you start a new session. `--port` picks the port (default 8766). Stop it with Ctrl+C. |
 

@@ -36,6 +36,7 @@ if (args.includes("--help") || args.includes("-h")) {
   --no-outline  do not record markdown headings (file structure view)
   --share     write harness-map-shared.html, safe to post: names, headings and paths replaced, numbers kept
   --serve     open the map on a local address (127.0.0.1) with a Rescan button; --port picks the port (default 8766)
+  --open      open the map in your browser even when not run in a terminal (for agents)
   --no-open   do not open the map in your browser when the scan finishes
   --window    context window size, e.g. 200k or 1m (default: autoCompactWindow from settings, else 1m)`);
   process.exit(0);
@@ -151,8 +152,9 @@ function summary(snap) {
   lines.push(`    ${snap.nodes.length.toLocaleString("en-US")} pieces${parts.length ? `: ${parts.join(", ")}` : ""}`);
   return lines.join("\n");
 }
-// Open the map in the default browser: only in a terminal, never in CI, and never with --no-open.
-const OPEN = !args.includes("--no-open") && !!process.stdout.isTTY && !process.env.CI;
+// Open the map in the default browser: in a terminal outside CI, or anywhere with --open (an agent runs the scan
+// without a terminal). Never with --no-open.
+const OPEN = !args.includes("--no-open") && (args.includes("--open") || (!!process.stdout.isTTY && !process.env.CI));
 function openInBrowser(target) {
   // Windows: hand the address to the URL handler directly, never through cmd.exe, which would parse & | ^ in it.
   const win = path.join(process.env.SystemRoot || "C:\\Windows", "System32", "rundll32.exe");

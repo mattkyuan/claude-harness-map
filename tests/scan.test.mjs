@@ -467,3 +467,13 @@ test("the generated page's script parses, so a broken placeholder or escape cann
     assert.equal(r.status, 0, `${path.basename(page)}: ${r.stderr}`);
   }
 });
+
+test("--open opens the map even outside a terminal, the way an agent runs it", async () => {
+  const f = fixture(), b = fakeBrowser(), out = path.join(f.home, "out");
+  const env = { ...terminalEnv(f, b), CI: "1" };
+  const r = spawnSync(process.execPath, [path.join(ROOT, "scan.mjs"), "--project", f.project, "--out", out, "--usage-days", "0", "--open"], { env, encoding: "utf8" });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /Opened it in your browser\./);
+  const seen = await waitFor(b.opened);
+  assert.deepEqual(seen.args, [pathToFileURL(path.join(out, "harness-map.html")).href]);
+});
