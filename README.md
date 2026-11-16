@@ -42,7 +42,7 @@ From a clone or download of this repository:
 node scan.mjs --project /path/to/your/project
 ```
 
-Then open `out/harness-map.html` in a browser. It works from `file://`, online. Every harness set up on your machine is scanned; pick one from the Viewing dropdown.
+It shows progress while it reads your setup, prints a short summary, and opens the map in your browser (`--no-open` skips that; it never opens outside a terminal). The page is `out/harness-map.html`; it works from `file://`, online. Every harness set up on your machine is scanned; pick one from the Viewing dropdown.
 
 | Flag | Meaning |
 |---|---|
@@ -53,6 +53,7 @@ Then open `out/harness-map.html` in a browser. It works from `file://`, online. 
 | `--out <dir>` | Output directory. Default: `./out` |
 | `--from <snapshot.json>` | Render an existing snapshot without scanning |
 | `--share` | Write `harness-map-shared.html`, safe to post: every number and the shape of the map, with names, headings and paths replaced by "memory file 12", "MCP server 3" and so on. Works with `--from` too. Share that page, never the snapshot JSON files next to it. |
+| `--no-open` | Do not open the map in your browser when the scan finishes. |
 | `--serve` | Open the map at a local address with a **Rescan** button, and a folder picker on the project name (switch between mapped folders, or browse or type a path to map another), instead of writing a file to open. Folders added this way last until the server stops. Listens on 127.0.0.1 only, and the address carries a private key (kept in a cookie after the first visit), so other pages in your browser cannot read the map or start a scan. File sizes update on rescan; the first-turn total moves after you start a new session. `--port` picks the port (default 8766). Stop it with Ctrl+C. |
 
 ## Reading the map

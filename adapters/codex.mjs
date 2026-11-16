@@ -38,7 +38,8 @@ export function recentProjects() {
 const readToml = (f) => { try { return parseToml(fs.readFileSync(f, "utf8")); } catch { return null; } };
 const readText = (f) => { try { return fs.readFileSync(f, "utf8"); } catch { return null; } };
 
-export async function scan({ projectDir, opt, graph }) {
+export async function scan({ projectDir, opt, graph, progress = () => {} }) {
+progress("reading config.toml, AGENTS.md and skills");
   const { nodes, notes, ids, add, link } = graph;
   const CODEX = process.env.CODEX_HOME || path.join(HOME, ".codex");
 
@@ -164,7 +165,7 @@ export async function scan({ projectDir, opt, graph }) {
   let picked = null;
   const forced = opt("session", null);
   if (forced) picked = { file: path.resolve(forced), ...readRollout(path.resolve(forced)) };
-  else for (const f of rollouts()) {
+  else for (const f of (progress("finding the last session rollout"), rollouts())) {
     let meta; try { meta = JSON.parse(firstLine(f) || "null")?.payload; } catch { continue; }
     if (!inProject(meta?.cwd)) continue;
     const r = readRollout(f);

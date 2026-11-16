@@ -29,7 +29,8 @@ export function recentProjects() {
 // project floor and marked private to you.
 const PRIVATE_MEMORY = { privateToYou: true, storedIn: "your home folder, not the repo" };
 
-export async function scan({ projectDir, opt, graph }) {
+export async function scan({ projectDir, opt, graph, progress = () => {} }) {
+progress("reading config, instructions and memory");
 const { nodes, edges, notes, ids, add, link } = graph;
 // Settings files with permission rules, linked to the MCP servers those rules name once every server is on the map.
 const permSources = [];
@@ -617,6 +618,7 @@ function scanTranscript(file) {
 }
 
 if (transcript && exists(transcript)) {
+  progress("reading the last session log");
   const t = scanTranscript(transcript);
   // Confirm which instruction files the harness actually injected.
   for (const f of t.instr || []) {
@@ -799,7 +801,9 @@ async function scanUsage(days) {
   const u = new Map(); // node id -> stats
   const stat = (n) => u.get(n.id) || u.set(n.id, { calls: 0, lookups: 0, resultChars: 0, sessions: new Set(), tools: new Set(), last: 0 }).get(n.id);
   const readline = (await import("node:readline")).createInterface;
+  let done = 0;
   for (const f of files) {
+    if (done++ % 25 === 0) progress(`counting MCP use in session logs (${done.toLocaleString("en-US")} of ${files.length.toLocaleString("en-US")})`);
     const pending = new Map(); // tool_use id -> node
     const rl = readline({ input: fs.createReadStream(f, { encoding: "utf8" }), crlfDelay: Infinity });
     for await (const line of rl) {

@@ -6,7 +6,8 @@
 import fs from "node:fs";
 import crypto from "node:crypto";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { spawn } from "node:child_process";
 import { HOME, HOME_REAL, readJson, tilde, untilde, outlineOf, redactUrls } from "./lib/util.mjs";
 import { createGraph } from "./lib/graph.mjs";
 import { shareSnapshot } from "./lib/share.mjs";
@@ -35,6 +36,7 @@ if (args.includes("--help") || args.includes("-h")) {
   --no-outline  do not record markdown headings (file structure view)
   --share     write harness-map-shared.html, safe to post: names, headings and paths replaced, numbers kept
   --serve     open the map on a local address (127.0.0.1) with a Rescan button; --port picks the port (default 8766)
+  --no-open   do not open the map in your browser when the scan finishes
   --window    context window size, e.g. 200k or 1m (default: autoCompactWindow from settings, else 1m)`);
   process.exit(0);
 }
@@ -127,10 +129,43 @@ function sourceOut(src, projectDir) {
 }
 ensureOut();
 
+// ---------- progress and summary ----------
+// Progress goes to stderr, redrawn on one line in a terminal; the summary goes to stdout.
+const TTY = !!process.stderr.isTTY;
+const k = (n) => (!Number.isFinite(n) ? "n/a" : n >= 1e6 ? `${(n / 1e6).toFixed(1).replace(/\.0$/, "")}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : String(n));
+function progress(label) {
+  const t0 = Date.now();
+  const draw = (m) => TTY && process.stderr.write(`\r\x1b[K${label}: ${m}`);
+  if (TTY) draw("starting"); else process.stderr.write(`${label}...\n`);
+  return { update: draw, done: () => process.stderr.write(`${TTY ? "\r\x1b[K✓ " : ""}${label} (${((Date.now() - t0) / 1000).toFixed(1)}s)\n`) };
+}
+function summary(snap) {
+  const s = snap.session || {}, by = snap.totals?.byLoad || {}, count = (kind) => snap.nodes.filter((n) => n.kind === kind).length;
+  const when = s.startedAt ? new Date(s.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : null;
+  const lines = [`  ${snap.harness.name}${when ? ` · last session ${when}` : ""}${s.model ? ` · ${s.model}` : ""}`];
+  if (Number.isFinite(s.firstTurnTokens)) lines.push(`    ${k(s.firstTurnTokens)} tokens before you type${s.contextWindow ? ` (${Math.round(100 * s.firstTurnTokens / s.contextWindow)}% of a ${k(s.contextWindow)} window)` : ""}`);
+  else lines.push("    no session found: totals cover config files only");
+  lines.push(`    ${[`${k(by.always || 0)} sent every turn`, by.deferred ? `${k(by.deferred)} tool names only` : "", `${k(by.on_demand || 0)} loaded on demand`].filter(Boolean).join(" · ")}`);
+  const parts = [[count("mcp_server"), "MCP server"], [count("skill") + count("skill_entry") ? Math.max(count("skill"), count("skill_entry")) : 0, "skill"], [count("settings"), "settings file"], [count("hook"), "hook"]]
+    .filter(([n]) => n).map(([n, w]) => `${n.toLocaleString("en-US")} ${w}${n > 1 ? "s" : ""}`);
+  lines.push(`    ${snap.nodes.length.toLocaleString("en-US")} pieces${parts.length ? `: ${parts.join(", ")}` : ""}`);
+  return lines.join("\n");
+}
+// Open the map in the default browser: only in a terminal, never in CI, and never with --no-open.
+const OPEN = !args.includes("--no-open") && !!process.stdout.isTTY && !process.env.CI;
+function openInBrowser(target) {
+  // Windows: hand the address to the URL handler directly, never through cmd.exe, which would parse & | ^ in it.
+  const win = path.join(process.env.SystemRoot || "C:\\Windows", "System32", "rundll32.exe");
+  const [cmd, argv] = process.platform === "darwin" ? ["open", [target]] : process.platform === "win32" ? [win, ["url.dll,FileProtocolHandler", target]] : ["xdg-open", [target]];
+  try { const p = spawn(cmd, argv, { detached: true, stdio: "ignore" }); p.on("error", () => {}); p.unref(); return true; } catch { return false; }
+}
+
 async function scanOne(adapter, projectDir) {
   const graph = createGraph();
   const { nodes, edges } = graph;
-  const { session, byLoad } = await adapter.scan({ projectDir, opt, graph });
+  const bar = progress(`${adapter.name} · ${tilde(projectDir)}`);
+  const { session, byLoad } = await adapter.scan({ projectDir, opt, graph, progress: bar.update });
+  bar.done();
   const snapshot = {
     version: 1,
     harness: { id: adapter.id, name: adapter.name },
@@ -173,13 +208,13 @@ async function scanOne(adapter, projectDir) {
     };
   }
   fs.writeFileSync(prevFile, JSON.stringify({ ...snapshot, previous: undefined }, null, 2));
-  console.log(`${adapter.name}: ${nodes.length} nodes, ${edges.length} edges. First-turn tokens: ${session.firstTurnTokens ?? "n/a"} | always ${byLoad.always || 0} | on demand ${byLoad.on_demand || 0} | deferred ${byLoad.deferred || 0}`);
   return snapshot;
 }
 
 async function scanAll() {
   const snapshots = [];
   for (const dir of projectDirs) for (const a of adapters) snapshots.push(await scanOne(a, dir));
+  for (const dir of [...new Set(snapshots.map((x) => x.project))]) console.log(`\nMapped ${dir}\n${snapshots.filter((x) => x.project === dir).map(summary).join("\n\n")}`);
   // One harness: the page holds its snapshot. Several: the page holds all of them and shows a switch.
   return render(forPage(snapshots.length === 1 ? snapshots[0] : snapshots), PAGE);
 }
@@ -191,9 +226,14 @@ if (SERVE) {
     if (!known) { projectDirs = [...projectDirs, dir]; await scanAll(); }
     return tilde(known || dir);
   };
-  const { url } = await startServer({ port: Number(opt("port", "8766")), pagePath: page, rescan: scanAll, addProject });
-  console.log(`Serving the map at ${url}\nThe address holds a private key: keep it to yourself. Opening it once is enough; the page then remembers it until the server stops. Press Ctrl+C to stop.`);
+  const { url, openerFile } = await startServer({ port: Number(opt("port", "8766")), pagePath: page, rescan: scanAll, addProject });
+  console.log(`\nServing the map at ${url}\nThe address holds a private key: keep it to yourself. Opening it once is enough; the page then remembers it until the server stops. Press Ctrl+C to stop.`);
+  // The browser opens a private file that forwards to the keyed address, so the key never appears in a process list.
+  if (OPEN && openInBrowser(pathToFileURL(openerFile()).href)) console.log("Opened it in your browser.");
 } else {
-  console.log(`Open: ${page}`);
+  const link = pathToFileURL(page).href;
+  console.log(`\nOpen the map: ${link}`);
+  if (OPEN && openInBrowser(link)) console.log("Opened it in your browser.");
+  if (!SHARE) console.log("Tip: --serve opens it with Rescan and a project picker.");
   if (SHARE) console.log("This page is safe to share. The snapshot JSON files next to it are the full local copy: do not share those.");
 }

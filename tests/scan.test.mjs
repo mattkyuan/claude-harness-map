@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { execFileSync, spawn } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import http from "node:http";
 import { fileURLToPath } from "node:url";
 
@@ -361,4 +361,30 @@ test("values from config and logs cannot carry secrets or names into the map", a
     nodes: [...snap.nodes, { id: "harness:x", label: "Acme merger with Globex", kind: "harness_block", scope: "session", load: "always", tokens: 5, detail: { role: "developer", event: "Acme" } }],
   }));
   for (const leak of ["123456789012", "Acme", "Globex", "sk-secret-type", "17:44"]) assert.ok(!shared.includes(leak), `shared page keeps ${leak}`);
+});
+
+test("the scan reports progress, then a plain summary, and never opens a browser outside a terminal", () => {
+  const f = fixture();
+  const env = { ...process.env, HOME: f.home, USERPROFILE: f.home };
+  delete env.CLAUDE_CONFIG_DIR;
+  const r = spawnSync(process.execPath, [path.join(ROOT, "scan.mjs"), "--project", f.project, "--out", path.join(f.home, "out"), "--usage-days", "0", "--harness", "claude-code"], { env, encoding: "utf8" });
+  assert.match(r.stderr, /Claude Code · ~\/code\/demo-app \(\d+\.\ds\)/, "progress names the harness and project, then the time");
+  assert.match(r.stdout, /Mapped ~\/code\/demo-app\n  Claude Code/);
+  assert.match(r.stdout, /\d+ pieces: 3 MCP servers/);
+  assert.match(r.stdout, /Open the map: file:\/\//);
+  assert.ok(!r.stdout.includes("Opened it in your browser"), "no browser without a terminal");
+});
+
+test("--serve opens the browser through a private file, so the key is never on a command line", async () => {
+  const { startServer } = await import("../lib/serve.mjs");
+  const page = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "chm-page-")), "p.html");
+  fs.writeFileSync(page, "<script>const SERVE = /*__SERVE__*/null;</script>");
+  const { server, token, openerFile } = await startServer({ port: 0, pagePath: page, rescan: async () => {}, addProject: async () => "" });
+  try {
+    const file = openerFile();
+    assert.ok(!file.includes(token), "the path handed to the browser does not carry the key");
+    assert.equal(fs.statSync(file).mode & 0o077, 0, "only you can read the file");
+    assert.equal(fs.statSync(path.dirname(file)).mode & 0o077, 0, "or list its folder");
+    assert.ok(fs.readFileSync(file, "utf8").includes(`?token=${token}`), "it forwards to the keyed address");
+  } finally { server.close(); }
 });
