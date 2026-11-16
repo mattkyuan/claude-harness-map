@@ -302,9 +302,10 @@ test("--serve needs its key and its own host, and rescans on request", async () 
     assert.equal(enter.status, 303, "the key in the address is swapped for a cookie");
     assert.equal(enter.headers.location, "/?project=x", "and the address is cleaned");
     const cookie = enter.headers["set-cookie"][0].split(";")[0];
-    assert.match(enter.headers["set-cookie"][0], /HttpOnly; SameSite=Strict/);
+    assert.match(enter.headers["set-cookie"][0], /HttpOnly; SameSite=Lax/);
     const page = await request(port, { headers: { ...own, Cookie: cookie } });
     assert.equal(page.status, 200);
+    assert.equal(page.headers["x-frame-options"], "DENY", "no other site may frame the page");
     assert.equal((await request(port, { pathname: `/?token=${"%C3%A9".repeat(32)}`, headers: own })).status, 403, "a key of the right length in other bytes is refused, not a crash");
     assert.equal((await request(port, { pathname: "//", headers: own })).status, 403, "an odd path is refused, not a crash");
     assert.ok(page.body.includes(`const SERVE = {"token":"${token}"}`), "the page carries the key for its Rescan button");
@@ -375,20 +376,6 @@ test("the scan reports progress, then a plain summary, and never opens a browser
   assert.ok(!r.stdout.includes("Opened it in your browser"), "no browser without a terminal");
 });
 
-test("--serve opens the browser through a private file, so the key is never on a command line", async () => {
-  const { startServer } = await import("../lib/serve.mjs");
-  const page = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "chm-page-")), "p.html");
-  fs.writeFileSync(page, "<script>const SERVE = /*__SERVE__*/null;</script>");
-  const { server, token, openerFile } = await startServer({ port: 0, pagePath: page, rescan: async () => {}, addProject: async () => "" });
-  try {
-    const file = openerFile();
-    assert.ok(!file.includes(token), "the path handed to the browser does not carry the key");
-    assert.equal(fs.statSync(file).mode & 0o077, 0, "only you can read the file");
-    assert.equal(fs.statSync(path.dirname(file)).mode & 0o077, 0, "or list its folder");
-    assert.ok(fs.readFileSync(file, "utf8").includes(`?token=${token}`), "it forwards to the keyed address");
-  } finally { server.close(); }
-});
-
 // ---------- the CLI as a person runs it: in a terminal, with a browser to open ----------
 // A stand-in for `open` / `xdg-open` that records what it was handed, and copies a file it was pointed at, since the
 // serve opener deletes itself.
@@ -448,26 +435,22 @@ test("in a terminal, --no-open opens nothing", unixOnly, async () => {
   } finally { run.stop(); }
 });
 
-test("in a terminal, --serve opens the map through the private file, and following it signs the browser in", unixOnly, async () => {
+test("in a terminal, --serve opens the browser on the keyed address, so it arrives signed in", unixOnly, async () => {
   const f = fixture(), b = fakeBrowser();
   const run = inTerminal(["--project", f.project, "--out", path.join(f.home, "out"), "--usage-days", "0", "--serve", "--port", "0"], terminalEnv(f, b));
   try {
     await waitFor(() => run.output().includes("Opened it in your browser."));
     const url = new URL(run.output().match(/Serving the map at (\S+)/)[1]);
-    const token = url.searchParams.get("token"), port = Number(url.port);
     const seen = await waitFor(b.opened);
-    assert.equal(seen.args.length, 1);
-    assert.ok(seen.args[0].startsWith("file:") && !seen.args[0].includes(token), "the browser's command line holds a file, never the key");
-    // Follow the opener the way a browser would: its refresh target, then the redirect, then the page.
-    const target = new URL(seen.files[seen.args[0]].match(/url=([^"]+)"/)[1]);
-    assert.equal(target.href, url.href, "the file forwards to the printed address");
-    const own = { Host: `127.0.0.1:${port}` };
-    const enter = await request(port, { pathname: `${target.pathname}${target.search}`, headers: own });
+    assert.deepEqual(seen.args, [url.href], "the browser is handed the printed address, key included");
+    // Follow it the way a browser would: the redirect sets the cookie, then the page opens with it.
+    const port = Number(url.port), own = { Host: `127.0.0.1:${port}` };
+    const enter = await request(port, { pathname: `${url.pathname}${url.search}`, headers: own });
     assert.equal(enter.status, 303);
+    assert.match(enter.headers["set-cookie"][0], /SameSite=Lax/, "Lax, so a sign-in that began on another page still works");
     const page = await request(port, { pathname: enter.headers.location, headers: { ...own, Cookie: enter.headers["set-cookie"][0].split(";")[0] } });
     assert.equal(page.status, 200);
     assert.ok(page.body.includes('"project":"~/code/demo-app"'), "and lands on this project's map");
-    await waitFor(() => !fs.existsSync(fileURLToPath(seen.args[0])), 35000);
   } finally { run.stop(); }
 });
 

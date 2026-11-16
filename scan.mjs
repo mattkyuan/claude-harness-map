@@ -226,10 +226,10 @@ if (SERVE) {
     if (!known) { projectDirs = [...projectDirs, dir]; await scanAll(); }
     return tilde(known || dir);
   };
-  const { url, openerFile } = await startServer({ port: Number(opt("port", "8766")), pagePath: page, rescan: scanAll, addProject });
+  const { url } = await startServer({ port: Number(opt("port", "8766")), pagePath: page, rescan: scanAll, addProject });
   console.log(`\nServing the map at ${url}\nThe address holds a private key: keep it to yourself. Opening it once is enough; the page then remembers it until the server stops. Press Ctrl+C to stop.`);
-  // The browser opens a private file that forwards to the keyed address, so the key never appears in a process list.
-  if (OPEN && openInBrowser(pathToFileURL(openerFile()).href)) console.log("Opened it in your browser.");
+  // The browser is opened on the keyed address, so it arrives signed in; the page swaps the key for a cookie at once.
+  if (OPEN && openInBrowser(url)) console.log("Opened it in your browser.");
 } else {
   const link = pathToFileURL(page).href;
   console.log(`\nOpen the map: ${link}`);
