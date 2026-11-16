@@ -17,9 +17,10 @@ Paste this into a Claude Code or Codex session started in the project you want t
 ```text
 Clone https://github.com/mattkyuan/claude-harness-map into ~/tools/claude-harness-map,
 or run git pull there if it already exists. It needs Node 18 or later and has no
-dependencies, so do not run npm install. Then, from this project, run:
+dependencies, so do not run npm install. Then run this, with this project's full path
+in place of PROJECT:
 
-  node ~/tools/claude-harness-map/scan.mjs --project "$PWD" --out ~/tools/claude-harness-map/out
+  node ~/tools/claude-harness-map/scan.mjs --project PROJECT --out ~/tools/claude-harness-map/out
 
 and tell me the full path of the harness-map.html it wrote, so I can open it in a browser.
 Do not read or summarize the generated files: they describe my setup, and I will look
