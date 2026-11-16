@@ -7,7 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import http from "node:http";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const SECRET = "sk-test-DO-NOT-LEAK-1234567890";
@@ -387,4 +387,100 @@ test("--serve opens the browser through a private file, so the key is never on a
     assert.equal(fs.statSync(path.dirname(file)).mode & 0o077, 0, "or list its folder");
     assert.ok(fs.readFileSync(file, "utf8").includes(`?token=${token}`), "it forwards to the keyed address");
   } finally { server.close(); }
+});
+
+// ---------- the CLI as a person runs it: in a terminal, with a browser to open ----------
+// A stand-in for `open` / `xdg-open` that records what it was handed, and copies a file it was pointed at, since the
+// serve opener deletes itself.
+function fakeBrowser() {
+  const bin = fs.mkdtempSync(path.join(os.tmpdir(), "chm-bin-"));
+  const log = path.join(bin, "opened.json");
+  const name = process.platform === "darwin" ? "open" : "xdg-open";
+  fs.writeFileSync(path.join(bin, name), `#!${process.execPath}
+const fs = require("fs"), { fileURLToPath } = require("url");
+const args = process.argv.slice(2), seen = { args, files: {} };
+for (const a of args) if (a.startsWith("file:")) try { seen.files[a] = fs.readFileSync(fileURLToPath(a), "utf8").slice(0, 4000); } catch {}
+fs.writeFileSync(${JSON.stringify(log)}, JSON.stringify(seen));
+`, { mode: 0o755 });
+  return { bin, log, opened: () => (fs.existsSync(log) ? JSON.parse(fs.readFileSync(log, "utf8")) : null) };
+}
+// Runs scan.mjs with a pseudo-terminal on stdout, the way it runs when a person types the command.
+function inTerminal(args, env) {
+  const cmd = [process.execPath, path.join(ROOT, "scan.mjs"), ...args];
+  const q = (s) => `'${s.replace(/'/g, "'\\''")}'`;
+  const argv = process.platform === "darwin" ? ["-q", "/dev/null", ...cmd] : ["-qec", cmd.map(q).join(" "), "/dev/null"];
+  const child = spawn("script", argv, { env, detached: true, stdio: ["ignore", "pipe", "pipe"] });
+  let out = "";
+  child.stdout.on("data", (c) => (out += c));
+  child.stderr.on("data", (c) => (out += c));
+  return { child, output: () => out, stop: () => { try { process.kill(-child.pid, "SIGTERM"); } catch {} } };
+}
+const waitFor = async (check, ms = 20000) => {
+  for (const end = Date.now() + ms; Date.now() < end; await new Promise((r) => setTimeout(r, 100))) { const v = check(); if (v) return v; }
+  throw new Error("timed out");
+};
+function terminalEnv(f, b) {
+  const env = { ...process.env, HOME: f.home, USERPROFILE: f.home, PATH: `${b.bin}${path.delimiter}${process.env.PATH}` };
+  delete env.CLAUDE_CONFIG_DIR; delete env.CI;
+  return env;
+}
+const unixOnly = { skip: process.platform === "win32" ? "needs script(1) and a PATH browser opener" : false };
+
+test("in a terminal, a scan opens the map it wrote", unixOnly, async () => {
+  const f = fixture(), b = fakeBrowser(), out = path.join(f.home, "out");
+  const run = inTerminal(["--project", f.project, "--out", out, "--usage-days", "0"], terminalEnv(f, b));
+  try {
+    await waitFor(() => run.output().includes("Opened it in your browser."));
+    const seen = await waitFor(b.opened);
+    assert.deepEqual(seen.args, [pathToFileURL(path.join(out, "harness-map.html")).href], "the browser is handed the page, and only the page");
+    assert.match(run.output(), /✓ Claude Code · ~\/code\/demo-app \(\d+\.\ds\)/, "progress ends with a tick and the time");
+  } finally { run.stop(); }
+});
+
+test("in a terminal, --no-open opens nothing", unixOnly, async () => {
+  const f = fixture(), b = fakeBrowser();
+  const run = inTerminal(["--project", f.project, "--out", path.join(f.home, "out"), "--usage-days", "0", "--no-open"], terminalEnv(f, b));
+  try {
+    await waitFor(() => run.output().includes("Open the map:"));
+    await new Promise((r) => setTimeout(r, 500));
+    assert.equal(b.opened(), null);
+    assert.ok(!run.output().includes("Opened it in your browser."));
+  } finally { run.stop(); }
+});
+
+test("in a terminal, --serve opens the map through the private file, and following it signs the browser in", unixOnly, async () => {
+  const f = fixture(), b = fakeBrowser();
+  const run = inTerminal(["--project", f.project, "--out", path.join(f.home, "out"), "--usage-days", "0", "--serve", "--port", "0"], terminalEnv(f, b));
+  try {
+    await waitFor(() => run.output().includes("Opened it in your browser."));
+    const url = new URL(run.output().match(/Serving the map at (\S+)/)[1]);
+    const token = url.searchParams.get("token"), port = Number(url.port);
+    const seen = await waitFor(b.opened);
+    assert.equal(seen.args.length, 1);
+    assert.ok(seen.args[0].startsWith("file:") && !seen.args[0].includes(token), "the browser's command line holds a file, never the key");
+    // Follow the opener the way a browser would: its refresh target, then the redirect, then the page.
+    const target = new URL(seen.files[seen.args[0]].match(/url=([^"]+)"/)[1]);
+    assert.equal(target.href, url.href, "the file forwards to the printed address");
+    const own = { Host: `127.0.0.1:${port}` };
+    const enter = await request(port, { pathname: `${target.pathname}${target.search}`, headers: own });
+    assert.equal(enter.status, 303);
+    const page = await request(port, { pathname: enter.headers.location, headers: { ...own, Cookie: enter.headers["set-cookie"][0].split(";")[0] } });
+    assert.equal(page.status, 200);
+    assert.ok(page.body.includes('"project":"~/code/demo-app"'), "and lands on this project's map");
+    await waitFor(() => !fs.existsSync(fileURLToPath(seen.args[0])), 35000);
+  } finally { run.stop(); }
+});
+
+test("the generated page's script parses, so a broken placeholder or escape cannot ship", () => {
+  const f = fixture();
+  const { out } = scan(f);
+  for (const page of [path.join(out, "harness-map.html"), path.join(ROOT, "docs", "index.html")]) {
+    const html = fs.readFileSync(page, "utf8");
+    const scripts = [...html.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+    assert.equal(scripts.length, 1, `${path.basename(page)} has its one module script`);
+    const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "chm-js-")), "page.mjs");
+    fs.writeFileSync(file, scripts[0]);
+    const r = spawnSync(process.execPath, ["--check", file], { encoding: "utf8" });
+    assert.equal(r.status, 0, `${path.basename(page)}: ${r.stderr}`);
+  }
 });
