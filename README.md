@@ -10,6 +10,27 @@ An interactive 3D map of what your coding agent (Claude Code or Codex) loads int
 
 Your config files are a small part of the context Claude Code actually sends. In one real session, CLAUDE.md, rules and the memory index came to about 6k tokens, while the first turn was 103k. Most of the rest was the harness itself: the system prompt plus definitions for the tools already loaded. This tool reads both your config and your session logs, so you can see the whole budget and trace each piece to its source.
 
+## Set it up with Claude Code or Codex
+
+Paste this into a Claude Code or Codex session started in the project you want to map:
+
+```text
+Clone https://github.com/mattkyuan/claude-harness-map into ~/tools/claude-harness-map,
+or run git pull there if it already exists. It needs Node 18 or later and has no
+dependencies, so do not run npm install. Then, from this project, run:
+
+  node ~/tools/claude-harness-map/scan.mjs --project "$PWD" --out ~/tools/claude-harness-map/out
+
+and tell me the full path of the harness-map.html it wrote, so I can open it in a browser.
+Do not read or summarize the generated files: they describe my setup, and I will look
+at the page myself.
+```
+
+- **Live page with Rescan and a folder picker:** `--serve` keeps running until you stop it. In Claude Code, ask for "the same command with `--serve`, run in the background, and give me the address it prints". In Codex, which waits for each command to finish, run that command yourself in a terminal. The address holds a private key, so open it yourself rather than pasting it anywhere.
+- **Codex:** cloning needs network access and writing to `~/tools` is outside the project, so Codex may ask you to approve both.
+- **Windows:** `~` is not expanded for `node` in PowerShell, so ask the agent to use the full path of your home folder.
+- **Updating later:** ask the agent to run `git pull` in `~/tools/claude-harness-map`, then the same command.
+
 ## Run it
 
 Requires Node 18 or later. The scanner has no dependencies; the page loads three.js from esm.sh, so viewing it needs a network connection.
