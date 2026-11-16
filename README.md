@@ -4,7 +4,7 @@ An interactive 3D map of what your coding agent (Claude Code or Codex) loads int
 
 ![Demo map](docs/screenshot.jpg)
 
-[Live demo](docs/index.html) (synthetic data)
+[Live demo](https://mattkyuan.github.io/claude-harness-map/) (synthetic data)
 
 ## Why
 
