@@ -47,6 +47,10 @@ const projectArgs = args.flatMap((a, i) => (a === "--project" && args[i + 1] ? [
 const realKey = (p) => { try { return fs.realpathSync(p); } catch { return p; } };
 let projectDirs = [...new Map((projectArgs.length ? projectArgs : [process.env.PWD && realKey(process.env.PWD) === realKey(process.cwd()) ? process.env.PWD : process.cwd()]).map((p) => path.resolve(p)).map((p) => [realKey(p), p])).values()];
 const outDir = path.resolve(opt("out", path.join(process.cwd(), "out")));
+// --name is the page's file name inside the output folder, never a path: "../x" or an absolute path would write the
+// page anywhere you can write.
+const pageName = opt("name", null);
+if (pageName != null && !/^[A-Za-z0-9._-]+\.html$/.test(pageName)) { console.error(`--name must be a file name ending in .html, like my-map.html: ${pageName}`); process.exit(1); }
 
 const sessionId = (p) => `session ${crypto.createHash("sha1").update(p).digest("hex").slice(0, 8)}`;
 // The output folder holds your full snapshot: a new one gets a .gitignore so it stays out of any repo it lands in.
@@ -64,8 +68,10 @@ function render(snapshot, file = "harness-map.html") {
   const LS = String.fromCharCode(0x2028), PS = String.fromCharCode(0x2029);
   const json = JSON.stringify(snapshot).replace(/</g, "\\u003c").replace(/\/\*/g, "/\\u002a").replaceAll(LS, "\\u2028").replaceAll(PS, "\\u2029");
   const html = viewer.replace("/*__SNAPSHOT__*/null", () => json);
-  fs.writeFileSync(path.join(outDir, file), html);
-  return path.join(outDir, file);
+  const target = path.join(outDir, file);
+  if (path.dirname(target) !== outDir) throw new Error(`Refusing to write outside the output folder: ${file}`);
+  fs.writeFileSync(target, html);
+  return target;
 }
 
 const SHARE = args.includes("--share");

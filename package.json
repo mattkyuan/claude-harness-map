@@ -1,6 +1,6 @@
 {
   "name": "claude-harness-map",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An interactive 3D map of what Claude Code or Codex loads into context, and where each piece comes from.",
   "license": "MIT",
   "type": "module",

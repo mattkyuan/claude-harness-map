@@ -1,7 +1,7 @@
 {
   "name": "harness-map",
   "description": "A 3D map of what Claude Code or Codex loads into context on the first turn, from your CLAUDE.md, rules and memory to skills, plugins, MCP servers and the harness itself, and where each piece comes from.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": { "name": "Matthew Yuan" },
   "license": "MIT",
   "keywords": ["context", "visualization", "mcp", "claude-code", "codex"]
