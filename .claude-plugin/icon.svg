@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>claude-harness-map</title>
+  <g stroke-linejoin="round" stroke-width="3">
+    <path d="M64 76 L112 96 L64 116 L16 96 Z" fill="#c9785a" stroke="#8f4f37"/>
+    <path d="M64 44 L112 64 L64 84 L16 64 Z" fill="#f2a65a" stroke="#b87430"/>
+    <path d="M64 12 L112 32 L64 52 L16 32 Z" fill="#b48ce8" stroke="#7d58b3"/>
+  </g>
+  <path d="M64 26 L46 36 M64 26 L82 36" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <g fill="#fff"><circle cx="64" cy="26" r="5.5"/><circle cx="46" cy="36" r="4.5"/><circle cx="82" cy="36" r="4.5"/></g>
+</svg>

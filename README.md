@@ -32,6 +32,15 @@ node ~/tools/claude-harness-map/scan.mjs --project "$PWD" --out ~/tools/claude-h
 - **Codex:** cloning needs network access and writing to `~/tools` is outside the project, so Codex may ask you to approve both.
 - **Windows:** `~` is not expanded for `node` in PowerShell, so ask the agent to use the full path of your home folder.
 
+Or install it as a Claude Code plugin, which adds the `/harness-map` skill (`/harness-map serve` for the live page, `/harness-map share` for a page safe to post):
+
+```text
+/plugin marketplace add mattkyuan/claude-sleep
+/plugin install harness-map@mattkyuan
+```
+
+The plugin writes its maps to `~/.claude-harness-map/out`. The marketplace lives in the [claude-sleep](https://github.com/mattkyuan/claude-sleep) repository, beside sleep, a memory upkeep plugin.
+
 ## Run it
 
 Requires Node 18 or later. The scanner has no dependencies; the page loads three.js from esm.sh, so viewing it needs a network connection.
